@@ -77,8 +77,10 @@ export async function fillWO({ project, day, shift, weekdayName }) {
   });
 
   // --- Equipo por área ---
+  // Escribe TODAS las herramientas; si pasan de los renglones marcados (8),
+  // siguen consecutivamente hacia abajo en la misma columna.
   areas.forEach((area, a) => {
-    const list = (day.tools?.[area.id] || []).slice(0, C.EQUIP_ROW.count);
+    const list = day.tools?.[area.id] || [];
     list.forEach((item, j) => {
       const label = `${item.qty}x ${item.tool}`;
       fitLeft(label, C.equipTextLeft(a), C.equipRowBaseline(j), 6.5, C.EQUIP_MAX_WIDTH);
