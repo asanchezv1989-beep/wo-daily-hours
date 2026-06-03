@@ -67,7 +67,11 @@ const ICON = {
   file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>',
   refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg>',
   folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
-  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 15V3M8 7l4-4 4 4"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+  backup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l4-4m-4 4l-4-4"/><path d="M4 17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/><ellipse cx="12" cy="5" rx="7" ry="2.5" opacity=".5"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>'
 };
 
 // Pastilla "Mi turno: Día/Noche" (abre el selector)
@@ -123,12 +127,17 @@ function roleChooser(force) {
 function formModal(title, fields, onSubmit) {
   const inputs = {};
   const body = fields.map(f => {
-    const inp = f.type === "select"
-      ? el("select", { class: "input" }, ...f.options.map(o => el("option", { value: o.value }, o.label)))
-      : el("input", { class: "input", type: f.type || "text", placeholder: f.placeholder || "" });
+    let inp, extra = null;
+    if (f.type === "select")
+      inp = el("select", { class: "input" }, ...f.options.map(o => el("option", { value: o.value }, o.label)));
+    else if (f.type === "datalist") {
+      const dlid = "dl-" + f.name;
+      extra = el("datalist", { id: dlid }, ...(f.options || []).map(o => el("option", { value: o })));
+      inp = el("input", { class: "input", list: dlid, placeholder: f.placeholder || "" });
+    } else inp = el("input", { class: "input", type: f.type || "text", placeholder: f.placeholder || "" });
     if (f.value) inp.value = f.value;
     inputs[f.name] = inp;
-    return el("div", { class: "field" }, el("label", {}, f.label), inp);
+    return el("div", { class: "field" }, el("label", {}, f.label), inp, extra);
   });
   const ov = el("div", { class: "overlay", onclick: e => { if (e.target === ov) ov.remove(); } },
     el("div", { class: "modal" },
@@ -183,6 +192,7 @@ async function renderProjects() {
     el("div", { class: "titles" }, el("h2", {}, t("projects")), el("p", {}, "Elite Refractory Services")),
     el("div", { class: "spacer" }),
     shiftRolePill(),
+    el("button", { class: "btn btn-ghost", onclick: backupModal }, span(ICON.backup), t("backup")),
     el("button", { class: "btn btn-primary", onclick: newProject }, span(ICON.plus), t("newProject"))
   );
   const wrap = el("div", { class: "wrap" }, head);
@@ -233,6 +243,52 @@ function newProject() {
     await DB.saveProject(p);
     openProject(p.id);
   });
+}
+
+// --- Respaldo / Exportar-Importar ---
+function backupModal() {
+  const fileInput = el("input", { type: "file", accept: "application/json,.json", style: "display:none", onchange: e => importBackup(e.target.files[0]) });
+  const ov = el("div", { class: "overlay", onclick: e => { if (e.target === ov) ov.remove(); } },
+    el("div", { class: "modal" },
+      el("h3", {}, t("backup")),
+      el("p", { class: "hint", style: "margin-bottom:18px" }, t("backupHint")),
+      el("div", { class: "grid", style: "gap:10px" },
+        el("button", { class: "btn btn-primary", onclick: () => { exportBackup(); ov.remove(); } }, span(ICON.backup), t("exportData")),
+        el("button", { class: "btn btn-ghost", onclick: () => fileInput.click() }, span(ICON.download), t("importData")),
+        fileInput),
+      el("div", { class: "row" }, el("button", { class: "btn btn-ghost", onclick: () => ov.remove() }, t("cancel")))
+    ));
+  document.body.append(ov);
+}
+
+async function exportBackup() {
+  const projects = await DB.allProjects();
+  for (const p of projects)
+    for (const h of (p.history || []))
+      if (h.pdf instanceof Blob) h.pdf = { __b64: await blobToB64(h.pdf) };
+  const data = JSON.stringify({ app: "wo-daily-hours", v: 1, exportedAt: Date.now(), projects });
+  downloadBlob(new Blob([data], { type: "application/json" }), `respaldo_daily_hours_${todayISO()}.json`);
+  toast(t("exported"), "ok");
+}
+
+function importBackup(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    let data;
+    try { data = JSON.parse(reader.result); } catch { return toast(t("importErr"), "err"); }
+    if (!data || data.app !== "wo-daily-hours" || !Array.isArray(data.projects)) return toast(t("importErr"), "err");
+    confirmBox(t("confirmImport"), async () => {
+      for (const p of data.projects) {
+        for (const h of (p.history || []))
+          if (h.pdf && h.pdf.__b64) h.pdf = await b64ToBlob(h.pdf.__b64);
+        await DB.saveProject(p);
+      }
+      toast(t("imported"), "ok");
+      render();
+    }, t("importData"));
+  };
+  reader.readAsText(file);
 }
 
 async function openProject(id) {
@@ -301,9 +357,10 @@ function workerColumn(shift) {
         if (list.length >= MAX_WORKERS) return toast(t("tooManyWorkers"), "err");
         formModal(t("addWorker"), [
           { name: "name", label: t("workerName") },
-          { name: "trade", label: t("trade"), placeholder: t("tradePh") }
+          { name: "trade", label: t("trade"), type: "datalist", options: tradesList(), placeholder: t("tradePh") }
         ], async (v) => {
           if (!v.name) { toast(t("needWorkerName"), "err"); return false; }
+          rememberTrade(v.trade);
           list.push({ id: DB.uid(), name: v.name, trade: v.trade });
           await persistNow(); render();
         });
@@ -362,6 +419,8 @@ function renderCapture(body) {
       });
     }
   }, span(ICON.plus), t("addArea")));
+  if (prevDayFor(shift, draft.date))
+    bar.append(el("button", { class: "btn btn-ghost btn-sm", onclick: () => copyPrevDay() }, span(ICON.copy), t("copyPrev")));
   body.append(bar);
 
   const workers = p.workers[shift];
@@ -379,7 +438,8 @@ function renderCapture(body) {
   // action bar
   body.append(el("div", { class: "actionbar" },
     el("button", { class: "btn btn-ghost", onclick: () => closeDay() }, span(ICON.cal), t("closeDay")),
-    el("button", { class: "btn btn-primary", onclick: () => generatePdf(true) }, span(ICON.download), t("fillWO"))
+    el("button", { class: "btn btn-ghost", onclick: () => generatePdf("share") }, span(ICON.share), t("share")),
+    el("button", { class: "btn btn-primary", onclick: () => generatePdf("download") }, span(ICON.download), t("fillWO"))
   ));
 }
 // Campo de fecha: input nativo (abre calendario en iPhone/Android) con texto MM/DD/AA superpuesto
@@ -453,21 +513,33 @@ function toolsSection(draft) {
   const aid = state.toolArea;
   const list = (draft.tools[aid] = draft.tools[aid] || []);
 
-  // add row
-  const sel = el("select", { class: "input" },
-    el("option", { value: "" }, "— " + t("tool") + " —"),
-    ...TOOLS.map(tn => el("option", { value: tn }, tn)));
+  const addTool = async (name, q) => {
+    const match = TOOLS.find(tn => tn.toLowerCase() === String(name).trim().toLowerCase());
+    if (!match) { toast(t("pickTool"), "err"); return false; }
+    const ex = list.find(x => x.tool === match);
+    if (ex) ex.qty = q || ex.qty; else list.push({ tool: match, qty: q || 1 });
+    bumpTool(match);
+    await persistNow(); render(); return true;
+  };
+
+  // Frecuentes (acceso rápido)
+  const freq = frequentTools(6);
+  if (freq.length) {
+    const fc = el("div", { class: "freq-row" }, el("span", { class: "freq-lbl" }, t("frequent")));
+    freq.forEach(tn => fc.append(el("button", { class: "freq-chip", onclick: () => addTool(tn, 1) }, "+ " + tn)));
+    card.append(fc);
+  }
+
+  // Buscar herramienta (datalist) + cantidad + agregar
+  const dl = el("datalist", { id: "tools-dl" }, ...TOOLS.map(tn => el("option", { value: tn })));
+  const sel = el("input", { class: "input", list: "tools-dl", placeholder: t("searchTool") });
   const qty = el("input", { class: "input", type: "number", min: "1", value: "1", style: "max-width:90px" });
   const addBtn = el("button", {
     class: "btn btn-soft", onclick: async () => {
-      if (!sel.value) return toast(t("pickTool"), "err");
-      const q = Math.max(1, parseInt(qty.value) || 1);
-      const ex = list.find(x => x.tool === sel.value);
-      if (ex) ex.qty = q; else list.push({ tool: sel.value, qty: q });
-      await persistNow(); render();
+      if (await addTool(sel.value, Math.max(1, parseInt(qty.value) || 1))) sel.value = "";
     }
   }, span(ICON.plus), t("addTool"));
-  card.append(el("div", { class: "row-inline", style: "margin-bottom:14px" },
+  card.append(dl, el("div", { class: "row-inline", style: "margin-bottom:14px" },
     el("div", { class: "field", style: "flex:2" }, el("label", {}, t("tool")), sel),
     el("div", { class: "field" }, el("label", {}, t("qty")), qty),
     addBtn));
@@ -502,20 +574,24 @@ function upsertHistory(rec) {
   const p = state.project;
   p.history = p.history || [];
   const i = p.history.findIndex(h => h.id === rec.id);
-  if (i >= 0) { rec.pdfName = rec.pdfName || p.history[i].pdfName; p.history[i] = rec; }
-  else p.history.unshift(rec);
+  if (i >= 0) {
+    rec.pdfName = rec.pdfName || p.history[i].pdfName;
+    rec.sent = rec.sent || p.history[i].sent;
+    p.history[i] = rec;
+  } else p.history.unshift(rec);
 }
 
-async function generatePdf(download) {
+async function generatePdf(mode) { // mode: 'download' | 'share'
   const p = state.project, shift = state.captureShift;
   const draft = ensureDraft(p, shift);
   try {
-    const { blob, bytes } = await fillWO({ project: p, day: draft, shift, weekdayName: weekdayName(draft.date) });
+    const { blob } = await fillWO({ project: p, day: draft, shift, weekdayName: weekdayName(draft.date) });
     const rec = await buildDayRecord(draft, shift);
-    rec.pdf = blob; rec.pdfName = fileName(p, draft, shift);
+    rec.pdf = blob; rec.pdfName = fileName(p, draft, shift); rec.sent = true;
     upsertHistory(rec);
     await persistNow();
-    if (download) downloadBlob(blob, rec.pdfName);
+    if (mode === "share") await sharePdf(blob, rec.pdfName);
+    else downloadBlob(blob, rec.pdfName);
     toast(t("pdfSaved"), "ok");
   } catch (e) {
     console.error(e); toast("Error: " + e.message, "err");
@@ -527,6 +603,62 @@ function downloadBlob(blob, name) {
   const a = el("a", { href: url, download: name });
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// Compartir el PDF (WhatsApp/correo) si el dispositivo lo soporta; si no, descarga
+async function sharePdf(blob, name) {
+  try {
+    const file = new File([blob], name, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: name });
+      return;
+    }
+  } catch (e) { if (e && e.name === "AbortError") return; }
+  downloadBlob(blob, name); // respaldo
+}
+
+function blobToB64(blob) {
+  return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+}
+async function b64ToBlob(dataUrl) { return (await fetch(dataUrl)).blob(); }
+
+// Herramientas frecuentes (contador en localStorage)
+function toolUsage() { try { return JSON.parse(localStorage.getItem("wo_tool_usage") || "{}"); } catch { return {}; } }
+function bumpTool(name) { const u = toolUsage(); u[name] = (u[name] || 0) + 1; localStorage.setItem("wo_tool_usage", JSON.stringify(u)); }
+function frequentTools(n = 6) {
+  const u = toolUsage();
+  return Object.keys(u).sort((a, b) => u[b] - u[a]).slice(0, n);
+}
+
+// Oficios (Trade) recordados
+const DEFAULT_TRADES = ["BL", "LB", "FM", "WL", "OP", "HL", "MA"];
+function tradesList() {
+  try { const c = JSON.parse(localStorage.getItem("wo_trades") || "[]"); return [...new Set([...DEFAULT_TRADES, ...c])]; }
+  catch { return DEFAULT_TRADES; }
+}
+function rememberTrade(tr) {
+  if (!tr) return; const c = tradesList();
+  if (!c.includes(tr)) localStorage.setItem("wo_trades", JSON.stringify([...c, tr]));
+}
+
+// Último día guardado de un turno (anterior a la fecha actual, o el más reciente)
+function prevDayFor(shift, beforeDate) {
+  const h = (state.project.history || []).filter(x => x.shift === shift);
+  if (!h.length) return null;
+  const before = h.filter(x => x.date < beforeDate).sort((a, b) => b.date.localeCompare(a.date));
+  return before[0] || h.slice().sort((a, b) => b.savedAt - a.savedAt)[0];
+}
+function copyPrevDay() {
+  const p = state.project, shift = state.captureShift, draft = ensureDraft(p, shift);
+  const prev = prevDayFor(shift, draft.date);
+  if (!prev) return toast(t("noPrev"), "err");
+  confirmBox(t("confirmCopyPrev"), async () => {
+    draft.areas = JSON.parse(JSON.stringify(prev.areas || []));
+    draft.hours = JSON.parse(JSON.stringify(prev.hours || {}));
+    draft.tools = JSON.parse(JSON.stringify(prev.tools || {}));
+    state.toolArea = draft.areas[0]?.id || null;
+    await persistNow(); toast(t("copiedPrev"), "ok"); render();
+  }, t("copyPrev"));
 }
 
 function closeDay() {
@@ -564,6 +696,8 @@ function renderHistory(body) {
         el("b", {}, prettyDate(h.date)),
         el("span", {}, `${workers} ${t("worker").toLowerCase()} · ${(h.areas || []).length} ${t("areas").toLowerCase()}`)),
       el("span", { class: "badge " + h.shift }, t(h.shift)),
+      h.sent ? el("span", { class: "badge sent" }, "✓ " + t("sent")) : null,
+      h.pdf ? el("button", { class: "btn btn-soft btn-sm", onclick: () => sharePdf(h.pdf, h.pdfName) }, span(ICON.share), t("share")) : null,
       h.pdf ? el("button", { class: "btn btn-soft btn-sm", onclick: () => downloadBlob(h.pdf, h.pdfName) }, span(ICON.download), t("downloadPdf"))
             : el("button", { class: "btn btn-soft btn-sm", onclick: () => regen(h) }, span(ICON.refresh), t("regenerate")),
       el("button", { class: "btn btn-ghost btn-sm", onclick: () => viewData(h) }, t("viewData")),
@@ -581,7 +715,7 @@ async function regen(h) {
   const p = state.project;
   try {
     const { blob } = await fillWO({ project: { ...p, workers: { ...p.workers, [h.shift]: h.workersSnapshot } }, day: h, shift: h.shift, weekdayName: weekdayName(h.date) });
-    h.pdf = blob; h.pdfName = h.pdfName || fileName(p, h, h.shift);
+    h.pdf = blob; h.pdfName = h.pdfName || fileName(p, h, h.shift); h.sent = true;
     await persistNow();
     downloadBlob(blob, h.pdfName);
     toast(t("pdfSaved"), "ok");

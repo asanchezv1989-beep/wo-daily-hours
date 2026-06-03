@@ -1,12 +1,12 @@
 // Service Worker — cachea la app para uso offline
-const CACHE = "wo-daily-v5";
+const CACHE = "wo-daily-v6";
 const ASSETS = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/styles.css",
   "./js/app.js", "./js/db.js", "./js/i18n.js", "./js/pdf.js",
   "./js/coords.js", "./js/tools.js", "./js/pdf-lib.min.js",
   "./assets/wo-template.pdf",
-  "./icons/icon-192.png", "./icons/icon-512.png"
+  "./icons/icon-192.png", "./icons/icon-512.png", "./icons/mark.png"
 ];
 
 self.addEventListener("install", (e) => {
