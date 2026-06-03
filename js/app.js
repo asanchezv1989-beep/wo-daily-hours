@@ -382,18 +382,17 @@ function renderCapture(body) {
     el("button", { class: "btn btn-primary", onclick: () => generatePdf(true) }, span(ICON.download), t("fillWO"))
   ));
 }
-// Campo de fecha: muestra MM/DD/AA, abre el calendario nativo al tocar
+// Campo de fecha: input nativo (abre calendario en iPhone/Android) con texto MM/DD/AA superpuesto
 function dateField(draft) {
-  const hidden = el("input", {
-    type: "date", class: "date-hidden", value: draft.date,
+  const input = el("input", {
+    type: "date", class: "date-input", value: draft.date,
     onchange: e => { draft.date = e.target.value || todayISO(); persist(); render(); }
   });
-  const display = el("button", {
-    type: "button", class: "input date-display",
-    onclick: () => { if (hidden.showPicker) { try { hidden.showPicker(); } catch (_) { hidden.focus(); } } else hidden.focus(); }
-  }, el("span", {}, fmtUS(draft.date)), el("span", { class: "date-ic", html: ICON.cal }));
+  const overlay = el("span", { class: "date-overlay" },
+    el("span", {}, fmtUS(draft.date)),
+    el("span", { class: "date-ic", html: ICON.cal }));
   return el("div", { class: "field" }, el("label", {}, t("dateLabel")),
-    el("div", { class: "date-wrap" }, display, hidden));
+    el("div", { class: "date-wrap" }, input, overlay));
 }
 function shiftBtn(s, label) {
   return el("button", {

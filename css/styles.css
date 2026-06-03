@@ -209,14 +209,22 @@ table.hours td.blocked input { color: #c2c8d4; pointer-events: none; }
 
 /* ---------- Date field (US MM/DD/AA) ---------- */
 .date-wrap { position: relative; }
-.date-display {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  cursor: pointer; text-align: left; font-weight: 700;
+/* Input nativo real (abre calendario al tocar en iOS/Android), con su texto oculto */
+.date-input {
+  width: 100%; font-family: inherit; font-size: 15px; font-weight: 700;
+  padding: 11px 13px; border-radius: var(--radius-sm); border: 1.5px solid var(--line);
+  background: #fbfcfe; color: transparent; outline: none; min-height: 46px;
 }
-.date-display:hover { border-color: var(--accent1); }
-.date-display .date-ic { display: inline-flex; color: var(--accent1); }
-.date-display .date-ic svg { width: 19px; height: 19px; }
-.date-hidden { position: absolute; right: 12px; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.date-input:focus { border-color: var(--accent1); background: #fff; box-shadow: 0 0 0 4px rgba(255,107,53,.14); }
+.date-input::-webkit-calendar-picker-indicator { opacity: 0; }
+/* Texto MM/DD/AA superpuesto; deja pasar el toque al input */
+.date-overlay {
+  position: absolute; left: 13px; right: 13px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; font-weight: 700; color: var(--ink);
+}
+.date-overlay .date-ic { display: inline-flex; color: var(--accent1); }
+.date-overlay .date-ic svg { width: 19px; height: 19px; }
 
 /* ---------- Shift role ---------- */
 .shift-pill { font-weight: 600; }
