@@ -97,9 +97,10 @@ export const STRINGS = {
     noPrev: "No hay un día anterior de este turno para copiar.",
     copiedPrev: "Día anterior copiado.",
     confirmCopyPrev: "Se cargarán las áreas, horas y herramientas del último día guardado de este turno. ¿Continuar?",
-    searchTool: "Buscar herramienta…",
+    searchTool: "Buscar o ver lista…",
     frequent: "Frecuentes",
     sent: "Enviado",
+    optional: "opcional",
     // Días semana
     weekdays: ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"]
   },
@@ -191,9 +192,10 @@ export const STRINGS = {
     noPrev: "No previous day of this shift to copy.",
     copiedPrev: "Previous day copied.",
     confirmCopyPrev: "Areas, hours and equipment from the last saved day of this shift will be loaded. Continue?",
-    searchTool: "Search equipment…",
+    searchTool: "Search or view list…",
     frequent: "Frequent",
     sent: "Sent",
+    optional: "optional",
     weekdays: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
   }
 };

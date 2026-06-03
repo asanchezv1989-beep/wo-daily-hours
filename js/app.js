@@ -357,10 +357,10 @@ function workerColumn(shift) {
         if (list.length >= MAX_WORKERS) return toast(t("tooManyWorkers"), "err");
         formModal(t("addWorker"), [
           { name: "name", label: t("workerName") },
-          { name: "trade", label: t("trade"), type: "datalist", options: tradesList(), placeholder: t("tradePh") }
+          { name: "trade", label: t("trade") + " (" + t("optional") + ")", type: "select",
+            options: [{ value: "", label: "—" }, ...TRADES.map(x => ({ value: x, label: x }))] }
         ], async (v) => {
           if (!v.name) { toast(t("needWorkerName"), "err"); return false; }
-          rememberTrade(v.trade);
           list.push({ id: DB.uid(), name: v.name, trade: v.trade });
           await persistNow(); render();
         });
@@ -530,17 +530,32 @@ function toolsSection(draft) {
     card.append(fc);
   }
 
-  // Buscar herramienta (datalist) + cantidad + agregar
-  const dl = el("datalist", { id: "tools-dl" }, ...TOOLS.map(tn => el("option", { value: tn })));
-  const sel = el("input", { class: "input", list: "tools-dl", placeholder: t("searchTool") });
+  // Combobox: busca al escribir y despliega la lista completa al tocar
+  const sel = el("input", { class: "input", placeholder: t("searchTool"), autocomplete: "off" });
+  const panel = el("div", { class: "combo-panel", style: "display:none" });
+  const fillPanel = (filter) => {
+    panel.innerHTML = "";
+    const f = String(filter || "").trim().toLowerCase();
+    const matches = TOOLS.filter(tn => !f || tn.toLowerCase().includes(f));
+    if (!matches.length) { panel.append(el("div", { class: "combo-empty" }, "—")); return; }
+    matches.forEach(tn => panel.append(el("button", {
+      class: "combo-opt", type: "button",
+      onmousedown: e => { e.preventDefault(); sel.value = tn; panel.style.display = "none"; }
+    }, tn)));
+  };
+  sel.addEventListener("focus", () => { fillPanel(sel.value); panel.style.display = "block"; });
+  sel.addEventListener("input", () => { fillPanel(sel.value); panel.style.display = "block"; });
+  sel.addEventListener("blur", () => setTimeout(() => { panel.style.display = "none"; }, 180));
+  const combo = el("div", { class: "combo" }, sel, panel);
+
   const qty = el("input", { class: "input", type: "number", min: "1", value: "1", style: "max-width:90px" });
   const addBtn = el("button", {
     class: "btn btn-soft", onclick: async () => {
       if (await addTool(sel.value, Math.max(1, parseInt(qty.value) || 1))) sel.value = "";
     }
   }, span(ICON.plus), t("addTool"));
-  card.append(dl, el("div", { class: "row-inline", style: "margin-bottom:14px" },
-    el("div", { class: "field", style: "flex:2" }, el("label", {}, t("tool")), sel),
+  card.append(el("div", { class: "row-inline", style: "margin-bottom:14px" },
+    el("div", { class: "field", style: "flex:2" }, el("label", {}, t("tool")), combo),
     el("div", { class: "field" }, el("label", {}, t("qty")), qty),
     addBtn));
 
@@ -630,16 +645,8 @@ function frequentTools(n = 6) {
   return Object.keys(u).sort((a, b) => u[b] - u[a]).slice(0, n);
 }
 
-// Oficios (Trade) recordados
-const DEFAULT_TRADES = ["BL", "LB", "FM", "WL", "OP", "HL", "MA"];
-function tradesList() {
-  try { const c = JSON.parse(localStorage.getItem("wo_trades") || "[]"); return [...new Set([...DEFAULT_TRADES, ...c])]; }
-  catch { return DEFAULT_TRADES; }
-}
-function rememberTrade(tr) {
-  if (!tr) return; const c = tradesList();
-  if (!c.includes(tr)) localStorage.setItem("wo_trades", JSON.stringify([...c, tr]));
-}
+// Oficios (Trade) — lista fija, opcional
+const TRADES = ["PM", "S", "TK", "TA", "BMF", "BM", "F", "SS", "SD", "MT", "RW", "SH"];
 
 // Último día guardado de un turno (anterior a la fecha actual, o el más reciente)
 function prevDayFor(shift, beforeDate) {

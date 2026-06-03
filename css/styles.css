@@ -193,6 +193,21 @@ table.hours td.blocked input { color: #c2c8d4; pointer-events: none; }
 .badge.night { background: #eef0ff; color: #4754c4; }
 .badge.sent { background: #e7f6ec; color: #15803d; }
 
+/* Combobox de herramientas (busca + lista completa) */
+.combo { position: relative; }
+.combo-panel {
+  position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px);
+  max-height: 260px; overflow-y: auto; background: #fff;
+  border: 1.5px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); padding: 6px;
+}
+.combo-opt {
+  display: block; width: 100%; text-align: left; border: 0; background: transparent;
+  padding: 10px 12px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600;
+  color: var(--ink); cursor: pointer;
+}
+.combo-opt:hover { background: var(--grad-soft); color: var(--accent1); }
+.combo-empty { padding: 10px 12px; color: var(--muted); }
+
 /* Herramientas frecuentes */
 .freq-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .freq-lbl { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 2px; }
