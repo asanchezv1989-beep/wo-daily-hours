@@ -243,6 +243,15 @@ table.hours td.blocked input { color: #c2c8d4; pointer-events: none; }
 .role-btn.day:hover, .role-btn.day.on { border-color: #f7931e; background: #fff7ed; }
 .role-btn.night:hover, .role-btn.night.on { border-color: #5b6bd6; background: #eef0ff; }
 
+/* ---------- Watermark ---------- */
+.watermark {
+  position: fixed; bottom: 8px; left: 0; right: 0; z-index: 1;
+  text-align: center; pointer-events: none;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .18em;
+  text-transform: uppercase; color: rgba(22, 30, 60, .16);
+  user-select: none;
+}
+
 /* ---------- Toast ---------- */
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 13px 22px; border-radius: 999px; font-weight: 700; font-size: 14px; box-shadow: var(--shadow-lg); z-index: 200; animation: rise .3s; display: flex; align-items: center; gap: 9px; }
 .toast.ok { background: #14532d; }
