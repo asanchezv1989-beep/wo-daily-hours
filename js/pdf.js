@@ -77,13 +77,20 @@ export async function fillWO({ project, day, shift, weekdayName }) {
   });
 
   // --- Equipo por área ---
-  // Escribe TODAS las herramientas; si pasan de los renglones marcados (8),
-  // siguen consecutivamente hacia abajo en la misma columna.
+  // Escribe TODAS las herramientas. Si pasan de los renglones marcados (8),
+  // compacta el interlineado para que quepan sin tocar la línea de firma.
+  const EQ_BOTTOM = 449;             // límite inferior (justo arriba de Approved By/Supervisor)
+  const EQ_TOP = C.equipRowBaseline(0);
   areas.forEach((area, a) => {
     const list = day.tools?.[area.id] || [];
+    if (!list.length) return;
+    let gap = C.EQUIP_ROW.height;    // 10.07 (alineado con los renglones impresos)
+    if (list.length > C.EQUIP_ROW.count)
+      gap = Math.min(gap, (EQ_BOTTOM - EQ_TOP) / (list.length - 1));
+    const size = gap < 7.5 ? Math.max(5, gap - 0.8) : 6.5;
     list.forEach((item, j) => {
       const label = `${item.qty}x ${item.tool}`;
-      fitLeft(label, C.equipTextLeft(a), C.equipRowBaseline(j), 6.5, C.EQUIP_MAX_WIDTH);
+      fitLeft(label, C.equipTextLeft(a), EQ_TOP + j * gap, size, C.EQUIP_MAX_WIDTH);
     });
   });
 
