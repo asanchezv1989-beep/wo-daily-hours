@@ -1,5 +1,5 @@
 // Service Worker — cachea la app para uso offline
-const CACHE = "wo-daily-v8";
+const CACHE = "wo-daily-v9";
 const ASSETS = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/styles.css",
@@ -18,16 +18,15 @@ self.addEventListener("activate", (e) => {
       .then(() => self.clients.claim())
   );
 });
+// Network-first: siempre intenta la versión más nueva; si no hay internet, usa caché.
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (url.origin !== location.origin) return; // deja pasar CDN de fuentes
+  if (e.request.method !== "GET" || url.origin !== location.origin) return;
   e.respondWith(
-    caches.match(e.request).then((cached) =>
-      cached || fetch(e.request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-        return res;
-      }).catch(() => cached)
-    )
+    fetch(e.request).then((res) => {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+      return res;
+    }).catch(() => caches.match(e.request).then((c) => c || caches.match("./index.html")))
   );
 });

@@ -34,8 +34,14 @@
   <script src="./js/pdf-lib.min.js"></script>
   <script type="module" src="./js/app.js"></script>
   <script>
-    if ('serviceWorker' in navigator)
+    if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+      // Recarga automática cuando se activa una versión nueva
+      let __refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (__refreshing) return; __refreshing = true; location.reload();
+      });
+    }
   </script>
 </body>
 </html>
