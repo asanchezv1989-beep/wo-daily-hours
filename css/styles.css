@@ -166,6 +166,18 @@ table.hours input.h:focus { background: rgba(255,107,53,.10); box-shadow: inset 
 table.hours td.blocked { background: repeating-linear-gradient(45deg, #f6f7fa, #f6f7fa 5px, #eef0f5 5px, #eef0f5 10px); }
 table.hours td.blocked input { color: #c2c8d4; pointer-events: none; }
 
+/* En celular: la columna de nombre se mantiene angosta (envuelve) para dejar ver las horas */
+@media (max-width: 640px) {
+  table.hours .wname, table.hours .corner {
+    min-width: 104px; max-width: 104px; width: 104px;
+    white-space: normal; word-break: break-word;
+    padding: 7px 8px; font-size: 12px; line-height: 1.2;
+  }
+  table.hours input.h { width: 40px; height: 36px; font-size: 13px; }
+  table.hours thead .sub th { width: 40px; font-size: 10px; }
+  table.hours thead .area-th { font-size: 12px; padding: 7px 4px; }
+}
+
 /* ---------- Tools ---------- */
 .tool-area-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .tool-area-tabs button { border: 1.5px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 14px; font-weight: 700; font-size: 13.5px; cursor: pointer; color: var(--muted); }
