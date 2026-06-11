@@ -4,7 +4,7 @@
 // URL del catálogo. Prioridad:
 //  1) localStorage('wo_sheet_url')  2) Google Sheet publicada (SHEET_URL)  3) CSV incluido (fallback offline)
 // Cuando tengas el link CSV de tu Google Sheet, pégalo en SHEET_URL y se sincroniza solo para todos.
-const SHEET_URL = ""; // <-- aquí va el enlace CSV publicado de Google Sheets
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSw_8ozEZjODHFKItP-GkxkYfInYqCYGPeg10AWArPH8500cmO4Gfx2M7uz5yAlIJl7R9ZsqGSSs5bC/pub?gid=0&single=true&output=csv";
 export const CATALOG_URL =
   localStorage.getItem("wo_sheet_url") || SHEET_URL || "./assets/roster.csv";
 
@@ -74,5 +74,7 @@ function buildCatalog(rows) {
 export async function fetchCatalog(url = CATALOG_URL) {
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error("HTTP " + res.status);
-  return buildCatalog(parseCSV(await res.text()));
+  let text = await res.text();
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // quita BOM de Google
+  return buildCatalog(parseCSV(text));
 }

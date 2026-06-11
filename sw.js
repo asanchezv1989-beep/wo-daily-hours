@@ -1,5 +1,5 @@
 // Service Worker — cachea la app para uso offline
-const CACHE = "wo-daily-v12";
+const CACHE = "wo-daily-v13";
 const ASSETS = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/styles.css",
