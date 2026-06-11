@@ -3,6 +3,7 @@ import { TOOLS } from "./tools.js";
 import { t, getLang, setLang } from "./i18n.js";
 import { fillWO, fileName } from "./pdf.js";
 import { COLS } from "./coords.js";
+import { CATALOG_URL, CATALOG_MODE, fetchCatalog } from "./catalog.js";
 
 const MAX_WORKERS = 23, MAX_AREAS = 8;
 
@@ -175,6 +176,33 @@ function ensureDraft(project, shift) {
   return d;
 }
 
+/* ---------- sincronización del catálogo (Google Sheets) ---------- */
+let CATALOG_SYNCED = false;
+async function syncCatalog() {
+  if (!CATALOG_MODE) return;
+  let cat;
+  try { cat = await fetchCatalog(CATALOG_URL); }
+  catch (e) { console.warn("Catalog sync failed", e); return false; }
+  if (!cat || !cat.length) return false;
+  const existing = await DB.allProjects();
+  const byKey = Object.fromEntries(existing.map(p => [p.id, p]));
+  const liveKeys = new Set(cat.map(c => c.key));
+  for (const c of cat) {
+    const p = byKey[c.key] || { id: c.key, createdAt: Date.now(), drafts: {}, history: [] };
+    p.number = c.number;
+    p.location = c.location;
+    p.supervisorDay = c.supDay;
+    p.supervisorNight = c.supNight;
+    p.workers = c.workers;
+    p.synced = true;
+    await DB.saveProject(p);
+  }
+  // borra proyectos que estaban sincronizados pero ya no están en el catálogo
+  for (const p of existing) if (p.synced && !liveKeys.has(p.id)) await DB.deleteProject(p.id);
+  CATALOG_SYNCED = true;
+  return true;
+}
+
 /* ---------- root render ---------- */
 const root = document.getElementById("app");
 async function render() {
@@ -192,8 +220,10 @@ async function renderProjects() {
     el("div", { class: "titles" }, el("h2", {}, t("projects")), el("p", {}, "Elite Refractory Services")),
     el("div", { class: "spacer" }),
     shiftRolePill(),
-    el("button", { class: "btn btn-ghost", onclick: backupModal }, span(ICON.backup), t("backup")),
-    el("button", { class: "btn btn-primary", onclick: newProject }, span(ICON.plus), t("newProject"))
+    CATALOG_MODE
+      ? el("button", { class: "btn btn-primary", onclick: doSync }, span(ICON.refresh), t("sync"))
+      : el("button", { class: "btn btn-primary", onclick: newProject }, span(ICON.plus), t("newProject")),
+    el("button", { class: "btn btn-ghost", onclick: backupModal }, span(ICON.backup), t("backup"))
   );
   const wrap = el("div", { class: "wrap" }, head);
   if (!projects.length) {
@@ -217,7 +247,7 @@ function projectCard(p) {
     ),
     el("div", { class: "row" },
       el("button", { class: "btn btn-soft btn-sm", onclick: e => { e.stopPropagation(); openProject(p.id); } }, t("openProject")),
-      el("button", {
+      p.synced ? null : el("button", {
         class: "btn btn-danger btn-sm", onclick: e => {
           e.stopPropagation();
           confirmBox(t("confirmDeleteProject"), async () => { await DB.deleteProject(p.id); render(); });
@@ -225,6 +255,13 @@ function projectCard(p) {
       }, span(ICON.trash))
     )
   );
+}
+
+async function doSync() {
+  toast(t("syncing"));
+  const ok = await syncCatalog();
+  render();
+  toast(ok ? t("syncOk") : t("syncFail"), ok ? "ok" : "err");
 }
 
 function newProject() {
@@ -327,13 +364,15 @@ function tabBtn(id, label) {
 /* ---------- WORKERS ---------- */
 function renderWorkers(body) {
   const p = state.project;
-  body.append(el("p", { class: "hint", style: "margin-bottom:16px" }, t("workersHint")));
+  body.append(el("p", { class: "hint", style: "margin-bottom:16px" },
+    p.synced ? "🔒 " + t("managedCentrally") : t("workersHint")));
   body.append(el("div", { class: "shift-cols" },
     workerColumn("day"), workerColumn("night")
   ));
 }
 function workerColumn(shift) {
   const p = state.project;
+  const readOnly = !!p.synced;
   const list = p.workers[shift];
   const head = el("div", { class: "shift-head " + shift },
     el("span", { class: "dot" }), el("h3", {}, t(shift === "day" ? "dayShift" : "nightShift")),
@@ -343,7 +382,7 @@ function workerColumn(shift) {
     ? list.map(w => el("div", { class: "worker-row" },
         el("div", { class: "av" }, initials(w.name)),
         el("div", { class: "info" }, el("b", {}, w.name), w.trade ? el("span", {}, w.trade) : null),
-        el("button", {
+        readOnly ? null : el("button", {
           class: "del", onclick: () => confirmBox(`${t("delete")}: ${w.name}?`, async () => {
             p.workers[shift] = list.filter(x => x.id !== w.id);
             await persistNow(); render();
@@ -351,22 +390,21 @@ function workerColumn(shift) {
         }, span(ICON.trash))
       ))
     : [el("div", { class: "empty", style: "padding:24px" }, t("noWorkers"))];
-  return el("div", { class: "card" }, head, ...items,
-    el("button", {
-      class: "btn btn-soft", style: "width:100%;margin-top:8px", onclick: () => {
-        if (list.length >= MAX_WORKERS) return toast(t("tooManyWorkers"), "err");
-        formModal(t("addWorker"), [
-          { name: "name", label: t("workerName") },
-          { name: "trade", label: t("trade") + " (" + t("optional") + ")", type: "select",
-            options: [{ value: "", label: "—" }, ...TRADES.map(x => ({ value: x, label: x }))] }
-        ], async (v) => {
-          if (!v.name) { toast(t("needWorkerName"), "err"); return false; }
-          list.push({ id: DB.uid(), name: v.name, trade: v.trade });
-          await persistNow(); render();
-        });
-      }
-    }, span(ICON.plus), t("addWorker"))
-  );
+  const addBtn = readOnly ? null : el("button", {
+    class: "btn btn-soft", style: "width:100%;margin-top:8px", onclick: () => {
+      if (list.length >= MAX_WORKERS) return toast(t("tooManyWorkers"), "err");
+      formModal(t("addWorker"), [
+        { name: "name", label: t("workerName") },
+        { name: "trade", label: t("trade") + " (" + t("optional") + ")", type: "select",
+          options: [{ value: "", label: "—" }, ...TRADES.map(x => ({ value: x, label: x }))] }
+      ], async (v) => {
+        if (!v.name) { toast(t("needWorkerName"), "err"); return false; }
+        list.push({ id: DB.uid(), name: v.name, trade: v.trade });
+        await persistNow(); render();
+      });
+    }
+  }, span(ICON.plus), t("addWorker"));
+  return el("div", { class: "card" }, head, ...items, addBtn);
 }
 
 /* ---------- CAPTURE ---------- */
@@ -782,3 +820,5 @@ document.querySelectorAll(".lang-toggle button").forEach(b =>
   b.addEventListener("click", () => { setLang(b.dataset.l); render(); }));
 render();
 if (!getRole()) roleChooser(true); // primera vez: elegir turno
+// Sincroniza el catálogo central al abrir (si hay internet)
+syncCatalog().then(() => { if (state.route === "projects") render(); });

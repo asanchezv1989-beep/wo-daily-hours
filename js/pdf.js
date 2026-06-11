@@ -44,7 +44,8 @@ export async function fillWO({ project, day, shift, weekdayName }) {
   if (project.location) drawLeft(project.location, C.HEADER.location.x, C.HEADER.location.y, 9);
   drawLeft(formatDate(day.date), C.HEADER.date.x, C.HEADER.date.y, 9);
   if (project.approvedBy) drawLeft(project.approvedBy, C.HEADER.approved.x, C.HEADER.approved.y, 9);
-  if (project.supervisor) drawLeft(project.supervisor, C.HEADER.supervisor.x, C.HEADER.supervisor.y, 9);
+  const supervisor = (shift === "night" ? project.supervisorNight : project.supervisorDay) || project.supervisor;
+  if (supervisor) drawLeft(supervisor, C.HEADER.supervisor.x, C.HEADER.supervisor.y, 9);
 
   // --- Nombres de áreas (recuadro superior) ---
   const areas = (day.areas || []).slice(0, C.NUM_AREAS);

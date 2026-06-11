@@ -101,6 +101,11 @@ export const STRINGS = {
     frequent: "Frecuentes",
     sent: "Enviado",
     optional: "opcional",
+    sync: "Sincronizar",
+    syncing: "Sincronizando…",
+    syncOk: "Catálogo actualizado.",
+    syncFail: "Sin conexión: mostrando la última copia.",
+    managedCentrally: "Trabajadores administrados por el admin (solo lectura). Aquí solo se capturan horas.",
     // Días semana
     weekdays: ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"]
   },
@@ -196,6 +201,11 @@ export const STRINGS = {
     frequent: "Frequent",
     sent: "Sent",
     optional: "optional",
+    sync: "Sync",
+    syncing: "Syncing…",
+    syncOk: "Catalog updated.",
+    syncFail: "Offline: showing last copy.",
+    managedCentrally: "Workers managed by admin (read-only). Here you only log hours.",
     weekdays: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
   }
 };
