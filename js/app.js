@@ -511,7 +511,9 @@ function hoursTable(draft, workers) {
 
   const tb = el("tbody", {});
   workers.forEach(w => {
-    const tr = el("tr", {}, el("td", { class: "wname" }, w.name));
+    const tr = el("tr", {}, el("td", { class: "wname" },
+      el("div", { class: "wn-name" }, w.name),
+      w.trade ? el("span", { class: "wn-trade" }, w.trade) : null));
     draft.areas.forEach((a, ai) => {
       COLS.forEach((c, ci) => {
         const enabled = colEnabled(c, draft.date);
