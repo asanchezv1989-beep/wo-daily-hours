@@ -72,7 +72,8 @@ const ICON = {
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 15V3M8 7l4-4 4 4"/></svg>',
   copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
   backup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l4-4m-4 4l-4-4"/><path d="M4 17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/><ellipse cx="12" cy="5" rx="7" ry="2.5" opacity=".5"/></svg>',
-  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>'
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>'
 };
 
 // Pastilla "Mi turno: Día/Noche" (abre el selector)
@@ -193,7 +194,7 @@ async function syncCatalog() {
     p.location = c.location;
     p.supervisorDay = c.supDay;
     p.supervisorNight = c.supNight;
-    p.workers = c.workers;
+    if (!p.workersEdited) p.workers = c.workers; // preserva ediciones locales
     p.synced = true;
     await DB.saveProject(p);
   }
@@ -365,15 +366,19 @@ function tabBtn(id, label) {
 function renderWorkers(body) {
   const p = state.project;
   body.append(el("p", { class: "hint", style: "margin-bottom:16px" },
-    p.synced ? "🔒 " + t("managedCentrally") : t("workersHint")));
+    p.synced ? t("workersHintSynced") : t("workersHint")));
   body.append(el("div", { class: "shift-cols" },
     workerColumn("day"), workerColumn("night")
   ));
 }
 function workerColumn(shift) {
   const p = state.project;
-  const readOnly = !!p.synced;
   const list = p.workers[shift];
+  const markEdited = () => { p.workersEdited = true; };
+  const tradeField = (val) => ({
+    name: "trade", label: t("trade") + " (" + t("optional") + ")", type: "select", value: val || "",
+    options: [{ value: "", label: "—" }, ...TRADES.map(x => ({ value: x, label: x }))]
+  });
   const head = el("div", { class: "shift-head " + shift },
     el("span", { class: "dot" }), el("h3", {}, t(shift === "day" ? "dayShift" : "nightShift")),
     el("span", { class: "count" }, list.length)
@@ -382,24 +387,35 @@ function workerColumn(shift) {
     ? list.map(w => el("div", { class: "worker-row" },
         el("div", { class: "av" }, initials(w.name)),
         el("div", { class: "info" }, el("b", {}, w.name), w.trade ? el("span", {}, w.trade) : null),
-        readOnly ? null : el("button", {
+        el("button", {
+          class: "edit", title: t("edit"), onclick: () => {
+            formModal(t("edit"), [
+              { name: "name", label: t("workerName"), value: w.name },
+              tradeField(w.trade)
+            ], async (v) => {
+              if (!v.name) { toast(t("needWorkerName"), "err"); return false; }
+              w.name = v.name; w.trade = v.trade; markEdited();
+              await persistNow(); render();
+            });
+          }
+        }, span(ICON.pencil)),
+        el("button", {
           class: "del", onclick: () => confirmBox(`${t("delete")}: ${w.name}?`, async () => {
-            p.workers[shift] = list.filter(x => x.id !== w.id);
+            p.workers[shift] = list.filter(x => x.id !== w.id); markEdited();
             await persistNow(); render();
           })
         }, span(ICON.trash))
       ))
     : [el("div", { class: "empty", style: "padding:24px" }, t("noWorkers"))];
-  const addBtn = readOnly ? null : el("button", {
+  const addBtn = el("button", {
     class: "btn btn-soft", style: "width:100%;margin-top:8px", onclick: () => {
       if (list.length >= MAX_WORKERS) return toast(t("tooManyWorkers"), "err");
       formModal(t("addWorker"), [
         { name: "name", label: t("workerName") },
-        { name: "trade", label: t("trade") + " (" + t("optional") + ")", type: "select",
-          options: [{ value: "", label: "—" }, ...TRADES.map(x => ({ value: x, label: x }))] }
+        tradeField("")
       ], async (v) => {
         if (!v.name) { toast(t("needWorkerName"), "err"); return false; }
-        list.push({ id: DB.uid(), name: v.name, trade: v.trade });
+        list.push({ id: DB.uid(), name: v.name, trade: v.trade }); markEdited();
         await persistNow(); render();
       });
     }
@@ -562,11 +578,15 @@ function toolsSection(draft) {
     await persistNow(); render(); return true;
   };
 
-  // Frecuentes (acceso rápido)
+  // Cantidad (la comparten las frecuentes y el buscador)
+  const qty = el("input", { class: "input", type: "number", min: "1", value: "1", style: "max-width:90px" });
+  const curQty = () => Math.max(1, parseInt(qty.value) || 1);
+
+  // Frecuentes (acceso rápido) — usan la cantidad seleccionada arriba
   const freq = frequentTools(6);
   if (freq.length) {
     const fc = el("div", { class: "freq-row" }, el("span", { class: "freq-lbl" }, t("frequent")));
-    freq.forEach(tn => fc.append(el("button", { class: "freq-chip", onclick: () => addTool(tn, 1) }, "+ " + tn)));
+    freq.forEach(tn => fc.append(el("button", { class: "freq-chip", onclick: () => addTool(tn, curQty()) }, "+ " + tn)));
     card.append(fc);
   }
 
@@ -588,10 +608,9 @@ function toolsSection(draft) {
   sel.addEventListener("blur", () => setTimeout(() => { panel.style.display = "none"; }, 180));
   const combo = el("div", { class: "combo" }, sel, panel);
 
-  const qty = el("input", { class: "input", type: "number", min: "1", value: "1", style: "max-width:90px" });
   const addBtn = el("button", {
     class: "btn btn-soft", onclick: async () => {
-      if (await addTool(sel.value, Math.max(1, parseInt(qty.value) || 1))) sel.value = "";
+      if (await addTool(sel.value, curQty())) sel.value = "";
     }
   }, span(ICON.plus), t("addTool"));
   card.append(el("div", { class: "row-inline", style: "margin-bottom:14px" },
@@ -599,10 +618,15 @@ function toolsSection(draft) {
     el("div", { class: "field" }, el("label", {}, t("qty")), qty),
     addBtn));
 
-  // chips
+  // chips con control de cantidad (−/+) y eliminar
   if (!list.length) card.append(el("div", { class: "muted", style: "padding:6px 2px" }, t("noTools")));
+  const setQty = async (it, q) => { it.qty = Math.max(1, q); await persistNow(); render(); };
   list.forEach(it => card.append(
-    el("span", { class: "tool-chip" }, el("span", { class: "q" }, it.qty + "×"), it.tool,
+    el("span", { class: "tool-chip" },
+      el("button", { class: "qstep", onclick: () => setQty(it, it.qty - 1) }, "−"),
+      el("span", { class: "q" }, it.qty + "×"),
+      el("button", { class: "qstep", onclick: () => setQty(it, it.qty + 1) }, "+"),
+      el("span", { class: "tool-name" }, it.tool),
       el("button", {
         class: "x", onclick: async () => {
           draft.tools[aid] = list.filter(x => x.tool !== it.tool);

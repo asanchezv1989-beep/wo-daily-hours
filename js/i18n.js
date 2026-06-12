@@ -106,6 +106,7 @@ export const STRINGS = {
     syncOk: "Catálogo actualizado.",
     syncFail: "Sin conexión: mostrando la última copia.",
     managedCentrally: "Trabajadores administrados por el admin (solo lectura). Aquí solo se capturan horas.",
+    workersHintSynced: "Lista base del catálogo central. Puedes editarla en este dispositivo (tus cambios se conservan).",
     // Días semana
     weekdays: ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"]
   },
@@ -206,6 +207,7 @@ export const STRINGS = {
     syncOk: "Catalog updated.",
     syncFail: "Offline: showing last copy.",
     managedCentrally: "Workers managed by admin (read-only). Here you only log hours.",
+    workersHintSynced: "Base list from the central catalog. You can edit it on this device (your changes are kept).",
     weekdays: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
   }
 };

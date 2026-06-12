@@ -139,6 +139,9 @@ body {
 .worker-row .info span { font-size: 12.5px; color: var(--muted); }
 .worker-row .del { color: var(--danger); background: transparent; border: 0; cursor: pointer; padding: 6px; border-radius: 8px; }
 .worker-row .del:hover { background: #fef2f2; }
+.worker-row .edit { color: var(--muted); background: transparent; border: 0; cursor: pointer; padding: 6px; border-radius: 8px; }
+.worker-row .edit:hover { background: var(--bg2); color: var(--accent1); }
+.worker-row .edit svg, .worker-row .del svg { width: 17px; height: 17px; }
 
 /* ---------- Areas chips ---------- */
 .area-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
@@ -185,7 +188,10 @@ table.hours td.blocked input { color: #c2c8d4; pointer-events: none; }
 .tool-area-tabs button { border: 1.5px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 14px; font-weight: 700; font-size: 13.5px; cursor: pointer; color: var(--muted); }
 .tool-area-tabs button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 .tool-chip { display: inline-flex; align-items: center; gap: 10px; background: #fbfcfe; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 8px 8px 12px; margin: 0 8px 8px 0; font-size: 13.5px; font-weight: 600; }
-.tool-chip .q { background: var(--grad); color: #fff; font-weight: 800; border-radius: 8px; padding: 2px 8px; font-size: 12.5px; }
+.tool-chip .q { background: var(--grad); color: #fff; font-weight: 800; border-radius: 8px; padding: 2px 8px; font-size: 12.5px; min-width: 30px; text-align: center; }
+.tool-chip .qstep { border: 1.5px solid var(--line); background: #fff; color: var(--accent1); cursor: pointer; width: 24px; height: 24px; border-radius: 7px; font-weight: 900; font-size: 16px; line-height: 1; display: grid; place-items: center; }
+.tool-chip .qstep:hover { background: var(--grad-soft); border-color: transparent; }
+.tool-chip .tool-name { margin-left: 2px; }
 .tool-chip .x { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 2px 4px; }
 .tool-chip .x:hover { color: var(--danger); }
 
