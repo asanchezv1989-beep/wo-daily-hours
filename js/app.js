@@ -5,7 +5,7 @@ import { fillWO, fileName } from "./pdf.js";
 import { COLS } from "./coords.js";
 import { CATALOG_URL, CATALOG_MODE, fetchCatalog } from "./catalog.js";
 
-const MAX_WORKERS = 23, MAX_AREAS = 8;
+const MAX_WORKERS = 35, MAX_AREAS = 8;
 
 const state = {
   route: "projects",      // 'projects' | 'project'

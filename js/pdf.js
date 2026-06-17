@@ -61,18 +61,28 @@ export async function fillWO({ project, day, shift, weekdayName }) {
   }
 
   // --- Trabajadores + horas ---
-  const workers = (project.workers?.[shift] || []).slice(0, C.WORKER_ROW.count);
+  // Si hay más trabajadores que renglones marcados (23), compacta el interlineado
+  // para que todos quepan en el área de nombres (sin invadir la sección de equipo).
+  const workers = project.workers?.[shift] || [];
+  const WK_TOP = C.WORKER_ROW.top0 + 7.6;   // baseline de la 1ª fila
+  const WK_BOTTOM = 346;                     // límite inferior (justo arriba de "Equipment")
+  let wkGap = C.WORKER_ROW.height;           // 10.06 (alineado con los renglones impresos)
+  if (workers.length > C.WORKER_ROW.count)
+    wkGap = Math.min(wkGap, (WK_BOTTOM - WK_TOP) / (workers.length - 1));
+  const nameSize = wkGap >= 9 ? 8 : Math.max(5, wkGap - 1);
+  const hrSize = wkGap >= 9 ? 7.5 : Math.max(5, wkGap - 1);
+  const trSize = wkGap >= 9 ? 7 : Math.max(4.5, wkGap - 1.5);
   workers.forEach((wkr, i) => {
-    const baseY = C.workerRowBaseline(i);
-    if (wkr.trade) fitLeft(wkr.trade, C.NAME_LEFT - 16, baseY, 7, 24, font); // Trade (col estrecha)
-    fitLeft(wkr.name, C.NAME_LEFT, baseY, 8, 112, font);                     // Name
+    const baseY = WK_TOP + i * wkGap;
+    if (wkr.trade) fitLeft(wkr.trade, C.NAME_LEFT - 16, baseY, trSize, 24, font); // Trade (col estrecha)
+    fitLeft(wkr.name, C.NAME_LEFT, baseY, nameSize, 112, font);                   // Name
     areas.forEach((area, a) => {
       const cell = day.hours?.[wkr.id]?.[area.id];
       if (!cell) return;
       C.COLS.forEach((col, c) => {
         const v = cell[col];
         if (v !== undefined && v !== null && v !== "" && Number(v) !== 0)
-          drawCentered(v, C.cellCenterX(a, c), baseY, 7.5);
+          drawCentered(v, C.cellCenterX(a, c), baseY, hrSize);
       });
     });
   });
