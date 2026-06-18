@@ -530,6 +530,13 @@ function hoursTable(draft, workers) {
     const tr = el("tr", {}, el("td", { class: "wname" },
       el("div", { class: "wn-name" }, w.name),
       w.trade ? el("span", { class: "wn-trade" }, w.trade) : null));
+    // suma de horas trabajadas (REG+OT+DT) de todas las áreas; ilumina al llegar a 12
+    const recompute = () => {
+      let tot = 0;
+      const wh = draft.hours[w.id] || {};
+      for (const aid in wh) for (const col of ["ST", "OT", "DT"]) tot += parseFloat(wh[aid]?.[col]) || 0;
+      tr.classList.toggle("row-12", tot >= 12);
+    };
     draft.areas.forEach((a, ai) => {
       COLS.forEach((c, ci) => {
         const enabled = colEnabled(c, draft.date);
@@ -544,12 +551,14 @@ function hoursTable(draft, workers) {
             draft.hours[w.id] = draft.hours[w.id] || {};
             draft.hours[w.id][a.id] = draft.hours[w.id][a.id] || {};
             draft.hours[w.id][a.id][c] = val;
+            recompute();
             persist();
           }
         });
         td.append(inp); tr.append(td);
       });
     });
+    recompute();
     tb.append(tr);
   });
   table.append(tb);

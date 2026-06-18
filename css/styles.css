@@ -170,6 +170,10 @@ table.hours input.h {
 table.hours input.h:focus { background: rgba(255,107,53,.10); box-shadow: inset 0 0 0 2px var(--accent1); border-radius: 6px; }
 table.hours td.blocked { background: repeating-linear-gradient(45deg, #f6f7fa, #f6f7fa 5px, #eef0f5 5px, #eef0f5 10px); }
 table.hours td.blocked input { color: #c2c8d4; pointer-events: none; }
+/* Fila iluminada cuando el trabajador llega a 12 h (REG+OT+DT) */
+table.hours tbody tr.row-12 td { background: #e6f7ec; }
+table.hours tbody tr.row-12 .wname { background: #d6f0e0; box-shadow: inset 4px 0 0 #15a34a; }
+table.hours tbody tr.row-12 input.h { color: #0f7a38; font-weight: 800; }
 
 /* En celular: la columna de nombre se mantiene angosta (envuelve) para dejar ver las horas */
 @media (max-width: 640px) {
