@@ -560,17 +560,23 @@ function hoursTable(draft, workers) {
 
   const tb = el("tbody", {});
   workers.forEach(w => {
+    const pdBadge = el("span", { class: "wn-pd", title: t("hasPD"), style: "display:none" }, "✓ PD");
     const tr = el("tr", {}, el("td", { class: "wname" },
       el("div", { class: "wn-name" }, w.name),
       el("div", { class: "wn-meta" },
         w.trade ? el("span", { class: "wn-trade" }, w.trade) : null,
+        pdBadge,
         draft.areas.length > 1 ? el("button", { class: "wn-split", title: t("splitAreas"), onclick: () => openSplit(w) }, "÷") : null)));
-    // suma de horas trabajadas (REG+OT+DT) de todas las áreas; ilumina al llegar a 12
+    // suma de horas (REG+OT+DT): ilumina al llegar a 12; y marca ✓ PD si tiene per diem
     const recompute = () => {
-      let tot = 0;
+      let tot = 0, hasPD = false;
       const wh = draft.hours[w.id] || {};
-      for (const aid in wh) for (const col of ["ST", "OT", "DT"]) tot += parseFloat(wh[aid]?.[col]) || 0;
+      for (const aid in wh) {
+        for (const col of ["ST", "OT", "DT"]) tot += parseFloat(wh[aid]?.[col]) || 0;
+        if ((parseFloat(wh[aid]?.PD) || 0) > 0) hasPD = true;
+      }
       tr.classList.toggle("row-12", tot >= 12);
+      pdBadge.style.display = hasPD ? "inline-flex" : "none";
     };
     draft.areas.forEach((a, ai) => {
       COLS.forEach((c, ci) => {

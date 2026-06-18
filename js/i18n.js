@@ -110,6 +110,7 @@ export const STRINGS = {
     splitAreas: "Dividir entre áreas",
     totalHours: "Horas totales del día (L-V: 8 REG + resto OT · Sáb: OT · Dom: DT)",
     enterHours: "Escribe las horas a repartir.",
+    hasPD: "Ya tiene PD",
     // Días semana
     weekdays: ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"]
   },
@@ -214,6 +215,7 @@ export const STRINGS = {
     splitAreas: "Split across areas",
     totalHours: "Total hours for the day (Mon-Fri: 8 REG + rest OT · Sat: OT · Sun: DT)",
     enterHours: "Enter the hours to split.",
+    hasPD: "Already has PD",
     weekdays: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
   }
 };
