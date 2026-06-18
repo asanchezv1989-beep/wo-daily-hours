@@ -160,7 +160,10 @@ table.hours .wname { position: sticky; left: 0; z-index: 2; background: #fff; te
 table.hours .corner { position: sticky; left: 0; z-index: 3; background: #fafbfe; border-right: 1.5px solid var(--line); }
 table.hours tbody tr:nth-child(even) .wname { background: #fbfcfe; }
 table.hours .wname .wn-name { font-weight: 700; line-height: 1.2; }
-table.hours .wname .wn-trade { display: inline-block; margin-top: 3px; font-size: 10.5px; font-weight: 800; color: var(--accent1); background: var(--grad-soft); border-radius: 6px; padding: 1px 6px; letter-spacing: .02em; }
+table.hours .wname .wn-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+table.hours .wname .wn-trade { display: inline-block; font-size: 10.5px; font-weight: 800; color: var(--accent1); background: var(--grad-soft); border-radius: 6px; padding: 1px 6px; letter-spacing: .02em; }
+table.hours .wname .wn-split { border: 1.5px solid var(--line); background: #fff; color: var(--accent1); cursor: pointer; width: 22px; height: 22px; border-radius: 7px; font-weight: 900; font-size: 15px; line-height: 1; display: grid; place-items: center; }
+table.hours .wname .wn-split:hover { background: var(--grad-soft); border-color: transparent; }
 table.hours td.cell { border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 table.hours td.cell.grp { border-left: 2px solid var(--bg2); }
 table.hours input.h {

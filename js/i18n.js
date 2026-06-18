@@ -107,6 +107,9 @@ export const STRINGS = {
     syncFail: "Sin conexión: mostrando la última copia.",
     managedCentrally: "Trabajadores administrados por el admin (solo lectura). Aquí solo se capturan horas.",
     workersHintSynced: "Lista base del catálogo central. Puedes editarla en este dispositivo (tus cambios se conservan).",
+    splitAreas: "Dividir entre áreas",
+    totalHours: "Horas totales del día (L-V: 8 REG + resto OT · Sáb: OT · Dom: DT)",
+    enterHours: "Escribe las horas a repartir.",
     // Días semana
     weekdays: ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"]
   },
@@ -208,6 +211,9 @@ export const STRINGS = {
     syncFail: "Offline: showing last copy.",
     managedCentrally: "Workers managed by admin (read-only). Here you only log hours.",
     workersHintSynced: "Base list from the central catalog. You can edit it on this device (your changes are kept).",
+    splitAreas: "Split across areas",
+    totalHours: "Total hours for the day (Mon-Fri: 8 REG + rest OT · Sat: OT · Sun: DT)",
+    enterHours: "Enter the hours to split.",
     weekdays: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
   }
 };

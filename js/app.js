@@ -37,6 +37,11 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 function dowOf(iso) { return new Date(iso + "T00:00:00").getDay(); }
+// Reparte un total en n partes enteras lo más parejas posible (sobrante a las primeras)
+function splitEven(total, n) {
+  const base = Math.floor(total / n), rem = total % n;
+  return Array.from({ length: n }, (_, i) => base + (i < rem ? 1 : 0));
+}
 function colEnabled(col, iso) {
   const d = dowOf(iso);
   if (d === 6) return col === "OT" || col === "PD";  // Sábado
@@ -525,11 +530,41 @@ function hoursTable(draft, workers) {
     r2.append(el("th", { class: colEnabled(c, draft.date) ? "" : "blk" }, c === "ST" ? "REG" : c))));
   table.append(el("thead", {}, r1, r2));
 
+  // Reparte el total de horas entre las áreas (enteros), con el desglose por día:
+  // L-V: 8 REG + resto OT · Sábado: todo OT · Domingo: todo DT. El PD no se toca.
+  const openSplit = (w) => {
+    formModal(`${t("splitAreas")} (${draft.areas.length}) · ${w.name}`,
+      [{ name: "total", label: t("totalHours"), type: "number", value: "12" }],
+      async (v) => {
+        const total = Math.max(0, parseInt(v.total) || 0);
+        if (!total) { toast(t("enterHours"), "err"); return false; }
+        const dow = dowOf(draft.date);
+        let cat;
+        if (dow === 6) cat = { OT: total };                                  // sábado
+        else if (dow === 0) cat = { DT: total };                             // domingo
+        else cat = { ST: Math.min(total, 8), OT: Math.max(0, total - 8) };   // lun-vie
+        // limpia REG/OT/DT del trabajador en todas las áreas (conserva PD), luego reparte
+        draft.areas.forEach(a => {
+          draft.hours[w.id] = draft.hours[w.id] || {};
+          draft.hours[w.id][a.id] = draft.hours[w.id][a.id] || {};
+          ["ST", "OT", "DT"].forEach(c => delete draft.hours[w.id][a.id][c]);
+        });
+        Object.entries(cat).forEach(([c, totalC]) => {
+          if (!totalC) return;
+          const parts = splitEven(totalC, draft.areas.length);
+          draft.areas.forEach((a, i) => { if (parts[i]) draft.hours[w.id][a.id][c] = String(parts[i]); });
+        });
+        await persistNow(); render();
+      });
+  };
+
   const tb = el("tbody", {});
   workers.forEach(w => {
     const tr = el("tr", {}, el("td", { class: "wname" },
       el("div", { class: "wn-name" }, w.name),
-      w.trade ? el("span", { class: "wn-trade" }, w.trade) : null));
+      el("div", { class: "wn-meta" },
+        w.trade ? el("span", { class: "wn-trade" }, w.trade) : null,
+        draft.areas.length > 1 ? el("button", { class: "wn-split", title: t("splitAreas"), onclick: () => openSplit(w) }, "÷") : null)));
     // suma de horas trabajadas (REG+OT+DT) de todas las áreas; ilumina al llegar a 12
     const recompute = () => {
       let tot = 0;
