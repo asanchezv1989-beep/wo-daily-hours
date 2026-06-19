@@ -6,6 +6,7 @@
   --ink: #161a25;
   --muted: #707a8c;
   --line: #e7eaf2;
+  --grid: #1c1c1c;
   --card: #ffffff;
   --bg: #f3f5fb;
   --bg2: #eef1f9;
@@ -150,22 +151,22 @@ body {
 .area-chip .x:hover { background: #fde8e0; color: var(--danger); }
 
 /* ---------- Hours grid ---------- */
-.grid-scroll { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow); }
+.grid-scroll { overflow-x: auto; border-radius: var(--radius); border: 1.5px solid var(--grid); background: #fff; box-shadow: var(--shadow); }
 table.hours { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
 table.hours th, table.hours td { padding: 0; text-align: center; }
-table.hours thead .area-th { background: var(--grad-soft); color: var(--accent1); font-weight: 800; font-size: 13px; padding: 8px 6px; border-bottom: 1px solid var(--line); border-left: 2px solid #fff; }
-table.hours thead .sub th { font-size: 11px; font-weight: 800; color: var(--muted); padding: 7px 0; background: #fafbfe; border-bottom: 1.5px solid var(--line); width: 46px; }
+table.hours thead .area-th { background: var(--grad-soft); color: var(--accent1); font-weight: 800; font-size: 13px; padding: 8px 6px; border-bottom: 1.5px solid var(--grid); border-left: 1.5px solid var(--grid); }
+table.hours thead .sub th { font-size: 11px; font-weight: 800; color: var(--muted); padding: 7px 0; background: #fafbfe; border-bottom: 1.5px solid var(--grid); border-left: 1px solid var(--grid); width: 46px; }
 table.hours thead .sub th.blk { color: #c2c8d4; }
-table.hours .wname { position: sticky; left: 0; z-index: 2; background: #fff; text-align: left; padding: 8px 12px; font-weight: 700; min-width: 150px; border-right: 1.5px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap; }
-table.hours .corner { position: sticky; left: 0; z-index: 3; background: #fafbfe; border-right: 1.5px solid var(--line); }
+table.hours .wname { position: sticky; left: 0; z-index: 2; background: #fff; text-align: left; padding: 8px 12px; font-weight: 700; min-width: 150px; border-right: 1.5px solid var(--grid); border-bottom: 1px solid var(--grid); white-space: nowrap; }
+table.hours .corner { position: sticky; left: 0; z-index: 3; background: #fafbfe; border-right: 1.5px solid var(--grid); border-bottom: 1.5px solid var(--grid); }
 table.hours tbody tr:nth-child(even) .wname { background: #fbfcfe; }
 table.hours .wname .wn-name { font-weight: 700; line-height: 1.2; }
 table.hours .wname .wn-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
 table.hours .wname .wn-trade { display: inline-block; font-size: 10.5px; font-weight: 800; color: var(--accent1); background: var(--grad-soft); border-radius: 6px; padding: 1px 6px; letter-spacing: .02em; }
 table.hours .wname .wn-split { border: 1.5px solid var(--line); background: #fff; color: var(--accent1); cursor: pointer; width: 22px; height: 22px; border-radius: 7px; font-weight: 900; font-size: 15px; line-height: 1; display: grid; place-items: center; }
 table.hours .wname .wn-split:hover { background: var(--grad-soft); border-color: transparent; }
-table.hours td.cell { border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-table.hours td.cell.grp { border-left: 2px solid var(--bg2); }
+table.hours td.cell { border-left: 1px solid var(--grid); border-bottom: 1px solid var(--grid); }
+table.hours td.cell.grp { border-left: 1.5px solid var(--grid); }
 table.hours input.h {
   width: 46px; height: 38px; border: 0; background: transparent; text-align: center;
   font-family: inherit; font-size: 14px; font-weight: 700; color: var(--ink); outline: none;
