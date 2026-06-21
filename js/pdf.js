@@ -17,7 +17,7 @@ const TD = (y) => C.PAGE.h - y;
 // Geometría de la tabla (aprovecha más alto de la hoja para renglones más altos)
 const G = {
   L: 1.4, TRADE_R: 29, NAME_R: 148.2, AREA_R: 789.8,
-  AN_TOP: 81.5, COL_TOP: 106.6, ROWS_TOP: 117.8, ROWS_BOT: 452, EQ_TOP: 463, BOT: 556, FOOTER_Y: 578
+  AN_TOP: 81.5, COL_TOP: 106.6, ROWS_TOP: 117.8, ROWS_BOT: 524, EQ_TOP: 535, BOT: 577, FOOTER_Y: 593
 };
 
 export async function fillWO({ project, day, shift }) {
@@ -96,7 +96,7 @@ export async function fillWO({ project, day, shift }) {
   });
 
   // ---- Trabajadores + horas ----
-  const ns = Math.max(5.5, Math.min(9, rowH - 3));
+  const ns = Math.max(5.5, Math.min(10, rowH - 3));
   workers.forEach((w, i) => {
     const baseY = G.ROWS_TOP + i * rowH + rowH / 2 + ns * 0.34;
     if (w.trade) fitCen(w.trade, (G.L + G.TRADE_R) / 2, baseY, Math.max(4, ns - 0.5), G.TRADE_R - G.L - 2);
