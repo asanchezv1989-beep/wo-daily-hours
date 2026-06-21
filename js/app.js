@@ -177,7 +177,7 @@ function ensureDraft(project, shift) {
   project.drafts = project.drafts || {};
   if (!project.drafts[shift]) project.drafts[shift] = { date: todayISO(), areas: [], hours: {}, tools: {} };
   const d = project.drafts[shift];
-  d.areas = d.areas || []; d.hours = d.hours || {}; d.tools = d.tools || {};
+  d.areas = d.areas || []; d.hours = d.hours || {}; d.tools = d.tools || {}; d.absent = d.absent || {};
   if (!d.date) d.date = todayISO();
   return d;
 }
@@ -558,14 +558,22 @@ function hoursTable(draft, workers) {
       });
   };
 
+  draft.absent = draft.absent || {};
   const tb = el("tbody", {});
   workers.forEach(w => {
     const pdBadge = el("span", { class: "wn-pd", title: t("hasPD"), style: "display:none" }, "✓ PD");
-    const tr = el("tr", {}, el("td", { class: "wname" },
+    const absentBtn = el("button", {
+      class: "wn-absent" + (draft.absent[w.id] ? " on" : ""), title: t("markAbsent"),
+      onclick: async () => {
+        if (draft.absent[w.id]) delete draft.absent[w.id]; else draft.absent[w.id] = true;
+        await persistNow(); render();
+      }
+    }, "🚫");
+    const tr = el("tr", { class: draft.absent[w.id] ? "absent" : "" }, el("td", { class: "wname" },
       el("div", { class: "wn-name" }, w.name),
       el("div", { class: "wn-meta" },
         w.trade ? el("span", { class: "wn-trade" }, w.trade) : null,
-        pdBadge,
+        pdBadge, absentBtn,
         draft.areas.length > 1 ? el("button", { class: "wn-split", title: t("splitAreas"), onclick: () => openSplit(w) }, "÷") : null)));
     // suma de horas (REG+OT+DT): ilumina al llegar a 12; y marca ✓ PD si tiene per diem
     const recompute = () => {
@@ -696,6 +704,7 @@ async function buildDayRecord(draft, shift) {
     areas: JSON.parse(JSON.stringify(draft.areas)),
     hours: JSON.parse(JSON.stringify(draft.hours)),
     tools: JSON.parse(JSON.stringify(draft.tools)),
+    absent: JSON.parse(JSON.stringify(draft.absent || {})),
     workersSnapshot: JSON.parse(JSON.stringify(p.workers[shift]))
   };
 }
@@ -794,7 +803,7 @@ function closeDay() {
     } catch (e) { console.error(e); }
     upsertHistory(rec);
     // limpiar horas y herramientas, conservar áreas y trabajadores, avanzar fecha
-    draft.hours = {}; draft.tools = {};
+    draft.hours = {}; draft.tools = {}; draft.absent = {};
     draft.date = todayISO();
     await persistNow();
     toast(t("dayClosed"), "ok");
@@ -880,7 +889,8 @@ function restoreDay(h) {
       date: h.date,
       areas: JSON.parse(JSON.stringify(h.areas || [])),
       hours: JSON.parse(JSON.stringify(h.hours || {})),
-      tools: JSON.parse(JSON.stringify(h.tools || {}))
+      tools: JSON.parse(JSON.stringify(h.tools || {})),
+      absent: JSON.parse(JSON.stringify(h.absent || {}))
     };
     state.captureShift = h.shift;
     state.toolArea = p.drafts[h.shift].areas[0]?.id || null;

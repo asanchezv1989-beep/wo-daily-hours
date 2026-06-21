@@ -180,6 +180,13 @@ table.hours tbody tr.row-12 .wname { background: #d6f0e0; box-shadow: inset 4px 
 table.hours tbody tr.row-12:nth-child(even) td { background: #cdeed9; }
 table.hours tbody tr.row-12:nth-child(even) .wname { background: #bce4ca; box-shadow: inset 4px 0 0 #0f7a38; }
 table.hours tbody tr.row-12 input.h { color: #0f7a38; font-weight: 800; }
+/* Botón marcar ausente y línea tapada en rojo transparente */
+table.hours .wname .wn-absent { border: 1.5px solid var(--line); background: #fff; cursor: pointer; width: 22px; height: 22px; border-radius: 7px; font-size: 11px; line-height: 1; display: grid; place-items: center; filter: grayscale(1); opacity: .55; }
+table.hours .wname .wn-absent.on, table.hours .wname .wn-absent:hover { filter: none; opacity: 1; border-color: #ef4444; }
+table.hours tbody tr.absent td { background: rgba(239, 68, 68, .28) !important; }
+table.hours tbody tr.absent .wname { background: rgba(239, 68, 68, .34) !important; box-shadow: inset 4px 0 0 #b91c1c !important; }
+table.hours tbody tr.absent .wn-name { text-decoration: line-through; }
+table.hours tbody tr.absent input.h { color: #7f1d1d; }
 /* Palomita ✓ PD junto al nombre */
 table.hours .wname .wn-pd { display: inline-flex; align-items: center; gap: 2px; font-size: 10px; font-weight: 800; color: #fff; background: #15a34a; border-radius: 6px; padding: 1px 6px; letter-spacing: .02em; }
 

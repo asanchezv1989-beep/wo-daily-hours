@@ -111,6 +111,13 @@ export async function fillWO({ project, day, shift }) {
         if (v !== undefined && v !== null && v !== "" && Number(v) !== 0) cen(v, cellCX(a, c), baseY, ns);
       });
     });
+    // Trabajador ausente/despedido: marcatexto rojo transparente sobre su línea
+    if (day.absent && day.absent[w.id]) {
+      page.drawRectangle({
+        x: G.L, y: TD(G.ROWS_TOP + (i + 1) * rowH),
+        width: G.AREA_R - G.L, height: rowH, color: rgb(1, 0.16, 0.16), opacity: 0.32
+      });
+    }
   });
 
   // ---- Equipo por área ----

@@ -111,6 +111,7 @@ export const STRINGS = {
     totalHours: "Horas totales del día (L-V: 8 REG + resto OT · Sáb: OT · Dom: DT)",
     enterHours: "Escribe las horas a repartir.",
     hasPD: "Ya tiene PD",
+    markAbsent: "Marcar ausente / despedido",
     // Días semana
     weekdays: ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"]
   },
@@ -216,6 +217,7 @@ export const STRINGS = {
     totalHours: "Total hours for the day (Mon-Fri: 8 REG + rest OT · Sat: OT · Sun: DT)",
     enterHours: "Enter the hours to split.",
     hasPD: "Already has PD",
+    markAbsent: "Mark absent / fired",
     weekdays: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
   }
 };
