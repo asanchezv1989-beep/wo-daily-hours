@@ -1,11 +1,11 @@
 // Service Worker — cachea la app para uso offline
-const CACHE = "wo-daily-v28";
+const CACHE = "wo-daily-v29";
 const ASSETS = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/styles.css",
   "./js/app.js", "./js/db.js", "./js/i18n.js", "./js/pdf.js",
-  "./js/coords.js", "./js/tools.js", "./js/pdf-lib.min.js", "./js/catalog.js",
-  "./assets/wo-template.pdf", "./assets/roster.csv",
+  "./js/coords.js", "./js/tools.js", "./js/pdf-lib.min.js", "./js/catalog.js", "./js/signin.js",
+  "./assets/wo-template.pdf", "./assets/roster.csv", "./assets/logo-full.png",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/mark.png"
 ];
 

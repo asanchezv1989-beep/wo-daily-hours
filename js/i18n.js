@@ -112,6 +112,7 @@ export const STRINGS = {
     enterHours: "Escribe las horas a repartir.",
     hasPD: "Ya tiene PD",
     markAbsent: "Marcar ausente / despedido",
+    signInSheet: "Sign In Sheet",
     // Días semana
     weekdays: ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"]
   },
@@ -218,6 +219,7 @@ export const STRINGS = {
     enterHours: "Enter the hours to split.",
     hasPD: "Already has PD",
     markAbsent: "Mark absent / fired",
+    signInSheet: "Sign In Sheet",
     weekdays: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
   }
 };

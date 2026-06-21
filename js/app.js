@@ -4,6 +4,7 @@ import { t, getLang, setLang } from "./i18n.js";
 import { fillWO, fileName } from "./pdf.js";
 import { COLS } from "./coords.js";
 import { CATALOG_URL, CATALOG_MODE, fetchCatalog } from "./catalog.js";
+import { fillSignIn, signInName } from "./signin.js";
 
 const MAX_WORKERS = 35, MAX_AREAS = 8;
 
@@ -497,6 +498,7 @@ function renderCapture(body) {
   // action bar
   body.append(el("div", { class: "actionbar" },
     el("button", { class: "btn btn-ghost", onclick: () => closeDay() }, span(ICON.cal), t("closeDay")),
+    el("button", { class: "btn btn-ghost", onclick: () => generateSignIn() }, span(ICON.file), t("signInSheet")),
     el("button", { class: "btn btn-ghost", onclick: () => generatePdf("share") }, span(ICON.share), t("share")),
     el("button", { class: "btn btn-primary", onclick: () => generatePdf("download") }, span(ICON.download), t("fillWO"))
   ));
@@ -717,6 +719,19 @@ function upsertHistory(rec) {
     rec.sent = rec.sent || p.history[i].sent;
     p.history[i] = rec;
   } else p.history.unshift(rec);
+}
+
+async function generateSignIn() {
+  const p = state.project, shift = state.captureShift;
+  const draft = ensureDraft(p, shift);
+  try {
+    const { blob } = await fillSignIn({ project: p, day: draft, shift });
+    const name = signInName(p, draft, shift);
+    if (navigator.canShare && navigator.canShare({ files: [new File([blob], name, { type: "application/pdf" })] }))
+      await sharePdf(blob, name);
+    else downloadBlob(blob, name);
+    toast(t("pdfSaved"), "ok");
+  } catch (e) { console.error(e); toast("Error: " + e.message, "err"); }
 }
 
 async function generatePdf(mode) { // mode: 'download' | 'share'
