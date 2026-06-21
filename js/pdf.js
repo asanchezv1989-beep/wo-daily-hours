@@ -1,4 +1,5 @@
-// Rellenado del WO file (Daily Hours) con pdf-lib
+// Rellenado del WO file (Daily Hours) con pdf-lib.
+// Redibuja la tabla con SOLO las áreas activas (más anchas) en una sola hoja.
 import * as C from "./coords.js";
 
 const EN_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -11,126 +12,127 @@ async function templateBytes() {
   return _templateBytes.slice(0);
 }
 
-const TD = (y) => C.PAGE.h - y; // top-down -> pdf-lib (bottom-left)
+const TD = (y) => C.PAGE.h - y;
 
-// Genera el PDF lleno (UNA sola hoja). Devuelve { bytes, blob }
+// Geometría de la tabla
+const G = {
+  L: 1.4, TRADE_R: 29, NAME_R: 148.2, AREA_R: 789.8,
+  AN_TOP: 81.5, COL_TOP: 106.6, ROWS_TOP: 117.8, ROWS_BOT: 348.6, EQ_TOP: 359.6, BOT: 440
+};
+
 export async function fillWO({ project, day, shift }) {
   const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
   const pdf = await PDFDocument.load(await templateBytes());
   const page = pdf.getPages()[0];
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontB = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const black = rgb(0, 0, 0);
-  const gridCol = rgb(0.11, 0.11, 0.11);
-  const white = rgb(1, 1, 1);
+  const black = rgb(0, 0, 0), grid = rgb(0.13, 0.13, 0.13), white = rgb(1, 1, 1);
 
-  const drawCentered = (text, cx, yTop, size, f = font) => {
-    if (text == null || text === "") return;
-    const s = String(text), w = f.widthOfTextAtSize(s, size);
-    page.drawText(s, { x: cx - w / 2, y: TD(yTop), size, font: f, color: black });
-  };
-  const drawLeft = (text, x, yTop, size, f = font) => {
-    if (text == null || text === "") return;
-    page.drawText(String(text), { x, y: TD(yTop), size, font: f, color: black });
-  };
-  const fitLeft = (text, x, yTop, maxSize, maxW, f = font) => {
-    if (!text) return;
-    let size = maxSize;
-    while (size > 4 && f.widthOfTextAtSize(String(text), size) > maxW) size -= 0.5;
-    drawLeft(text, x, yTop, size, f);
-  };
-  const fitCentered = (text, cx, yTop, maxSize, maxW, f = font) => {
-    if (!text) return;
-    let size = maxSize;
-    while (size > 4 && f.widthOfTextAtSize(String(text), size) > maxW) size -= 0.5;
-    drawCentered(text, cx, yTop, size, f);
-  };
+  const text = (s, x, yTop, size, f = font) => { if (s != null && s !== "") page.drawText(String(s), { x, y: TD(yTop), size, font: f, color: black }); };
+  const cen = (s, cx, yTop, size, f = font) => { if (s == null || s === "") return; const w = f.widthOfTextAtSize(String(s), size); text(s, cx - w / 2, yTop, size, f); };
+  const fit = (s, x, yTop, maxSize, maxW, f = font) => { if (!s) return; let z = maxSize; while (z > 3.5 && f.widthOfTextAtSize(String(s), z) > maxW) z -= 0.5; text(s, x, yTop, z, f); };
+  const fitCen = (s, cx, yTop, maxSize, maxW, f = font) => { if (!s) return; let z = maxSize; while (z > 3.5 && f.widthOfTextAtSize(String(s), z) > maxW) z -= 0.5; cen(s, cx, yTop, z, f); };
+  const vline = (x, y1, y2, w, col = grid) => page.drawLine({ start: { x, y: TD(y1) }, end: { x, y: TD(y2) }, thickness: w, color: col });
+  const hline = (x1, x2, y, w, col = grid) => page.drawLine({ start: { x: x1, y: TD(y) }, end: { x: x2, y: TD(y) }, thickness: w, color: col });
 
-  // --- Encabezado ---
-  drawLeft("Elite Refractory Services", C.HEADER.company.x, C.HEADER.company.y, 9, fontB);
-  drawLeft(shift === "night" ? "Nights" : "Days", C.HEADER.shift.x, C.HEADER.shift.y, 9);
-  if (project.location) drawLeft(project.location, C.HEADER.location.x, C.HEADER.location.y, 9);
-  drawLeft(formatDate(day.date), C.HEADER.date.x, C.HEADER.date.y, 9);
-  if (project.approvedBy) drawLeft(project.approvedBy, C.HEADER.approved.x, C.HEADER.approved.y, 9);
+  // --- Encabezado (de la plantilla) ---
+  text("Elite Refractory Services", C.HEADER.company.x, C.HEADER.company.y, 9, fontB);
+  text(shift === "night" ? "Nights" : "Days", C.HEADER.shift.x, C.HEADER.shift.y, 9);
+  if (project.location) text(project.location, C.HEADER.location.x, C.HEADER.location.y, 9);
+  text(formatDate(day.date), C.HEADER.date.x, C.HEADER.date.y, 9);
+  if (project.approvedBy) text(project.approvedBy, C.HEADER.approved.x, C.HEADER.approved.y, 9);
   const supervisor = (shift === "night" ? project.supervisorNight : project.supervisorDay) || project.supervisor;
-  if (supervisor) drawLeft(supervisor, C.HEADER.supervisor.x, C.HEADER.supervisor.y, 9);
-
-  // Día de la semana en inglés, arriba de la fecha (esquina superior derecha)
+  if (supervisor) text(supervisor, C.HEADER.supervisor.x, C.HEADER.supervisor.y, 9);
   const weekday = EN_DAYS[new Date(day.date + "T00:00:00").getDay()] || "";
-  fitCentered(weekday, 727, 36, 11, 120, fontB);
+  fitCen(weekday, 727, 36, 11, 120, fontB);
 
-  // --- Nombres de áreas ---
   const areas = (day.areas || []).slice(0, C.NUM_AREAS);
-  areas.forEach((area, a) => {
-    const cx = (C.groupLeft(a) + C.groupRight(a)) / 2;
-    fitCentered(area.name, cx, C.areaNameBaseline(), 9, C.GROUP_WIDTH - 4, fontB);
-  });
-
-  // --- Trabajadores + horas ---
   const workers = project.workers?.[shift] || [];
-  const drawWorkerRow = (wkr, baseY, nSize, hSize, tSize) => {
-    if (wkr.trade) fitLeft(wkr.trade, C.NAME_LEFT - 16, baseY, tSize, 24, font);
-    fitLeft(wkr.name, C.NAME_LEFT, baseY, nSize, 112, font);
-    areas.forEach((area, a) => {
-      const cell = day.hours?.[wkr.id]?.[area.id];
-      if (!cell) return;
-      C.COLS.forEach((col, c) => {
-        const v = cell[col];
-        if (v !== undefined && v !== null && v !== "" && Number(v) !== 0)
-          drawCentered(v, C.cellCenterX(a, c), baseY, hSize);
-      });
-    });
-  };
+  const N = areas.length;
 
-  if (workers.length <= C.WORKER_ROW.count) {
-    // Caben en los recuadros impresos: alineados tal cual
-    workers.forEach((wkr, i) => drawWorkerRow(wkr, C.workerRowBaseline(i), 8, 7.5, 7));
-  } else {
-    // Más de 23: redibujo la rejilla del cuerpo para que TODOS quepan en una hoja
-    const N = workers.length;
-    const TOPL = C.WORKER_ROW.top0;   // 118.4
-    const BOTL = 348.6;               // justo arriba de "Equipment"
-    const rowH = (BOTL - TOPL) / N;
-    // tapa las líneas impresas del cuerpo
-    page.drawRectangle({ x: 1.6, y: TD(BOTL), width: 789.2, height: BOTL - TOPL, color: white });
-    // líneas verticales (Trade | Name | 8 áreas × 4)
-    const vx = [1.4, 29, 148.2];
-    for (let k = 1; k <= 32; k++) vx.push(148.2 + 20.05 * k);
-    vx.forEach(x => page.drawLine({ start: { x, y: TD(TOPL) }, end: { x, y: TD(BOTL) }, thickness: 0.6, color: gridCol }));
-    // líneas horizontales (N filas)
-    for (let i = 0; i <= N; i++) {
-      const y = TOPL + i * rowH;
-      page.drawLine({ start: { x: 1.4, y: TD(y) }, end: { x: 789.8, y: TD(y) }, thickness: 0.6, color: gridCol });
-    }
-    const ns = Math.max(4.5, Math.min(8, rowH - 2));
-    workers.forEach((wkr, i) => {
-      const baseY = TOPL + i * rowH + rowH / 2 + ns * 0.34;
-      drawWorkerRow(wkr, baseY, ns, ns, Math.max(4, ns - 0.5));
-    });
+  if (N === 0) { // sin áreas: deja la plantilla en blanco
+    const bytes = await pdf.save();
+    return { bytes, blob: new Blob([bytes], { type: "application/pdf" }) };
   }
 
-  // --- Equipo por área (si pasan de 8, compacta para que quepan) ---
-  const EQ_BOTTOM = 449, EQ_TOP = C.equipRowBaseline(0);
+  // Tapa la tabla impresa (área de columnas + filas + equipo)
+  page.drawRectangle({ x: 1.0, y: TD(G.BOT + 1), width: 790, height: (G.BOT + 1) - (G.AN_TOP - 1), color: white });
+
+  const groupW = (G.AREA_R - G.NAME_R) / N;
+  const subW = groupW / 4;
+  const gLeft = (a) => G.NAME_R + groupW * a;
+  const cellCX = (a, c) => gLeft(a) + subW * (c + 0.5);
+  const COLS = ["ST", "OT", "DT", "PD"];
+
+  // ---- Líneas de la tabla ----
+  // horizontales principales
+  hline(G.NAME_R, G.AREA_R, G.AN_TOP, 1.4, black);     // techo de recuadros de área
+  hline(G.L, G.AREA_R, G.COL_TOP, 1.0);                 // bajo recuadros de área / techo de etiquetas
+  hline(G.L, G.AREA_R, G.ROWS_TOP, 1.0);                // bajo ST/OT/DT/PD
+  hline(G.L, G.AREA_R, G.ROWS_BOT, 1.0);                // fin de filas
+  hline(G.NAME_R, G.AREA_R, G.EQ_TOP, 0.8);             // bajo "Equipment"
+  hline(G.L, G.AREA_R, G.BOT, 1.4, black);              // piso de la tabla
+
+  // filas de trabajadores (rellena la zona; mínimo 23 para que se vea como forma)
+  const R = Math.max(C.WORKER_ROW.count, workers.length);
+  const rowH = (G.ROWS_BOT - G.ROWS_TOP) / R;
+  for (let i = 1; i < R; i++) hline(G.L, G.AREA_R, G.ROWS_TOP + i * rowH, 0.4);
+
+  // verticales: izquierda (Trade/Name) y sub-columnas
+  vline(G.L, G.COL_TOP, G.BOT, 1.4, black);            // borde izquierdo
+  vline(G.TRADE_R, G.COL_TOP, G.BOT, 0.6);             // Trade | Name
+  for (let a = 0; a < N; a++) {
+    for (let k = 1; k < 4; k++) vline(gLeft(a) + subW * k, G.COL_TOP, G.ROWS_BOT, 0.4); // sub-columnas
+  }
+  // separadores de área en NEGRO grueso (lo que marcaste)
+  for (let a = 0; a <= N; a++) vline(gLeft(a), G.AN_TOP, G.BOT, 1.6, black);
+
+  // ---- Encabezados ----
+  text("JOBS", 58, 100, 8, fontB);
+  cen("Trade", (G.L + G.TRADE_R) / 2, 114.5, 7.5, fontB);
+  cen("Name", (G.TRADE_R + G.NAME_R) / 2, 114.5, 7.5, fontB);
+  areas.forEach((area, a) => {
+    fitCen(area.name, gLeft(a) + groupW / 2, 98, 11, groupW - 8, fontB);
+    COLS.forEach((c, ci) => cen(c, cellCX(a, ci), 114.5, 7, fontB));
+    cen("Equipment", gLeft(a) + groupW / 2, 356, 8, font);
+  });
+
+  // ---- Trabajadores + horas ----
+  const ns = Math.max(4.5, Math.min(8, rowH - 2));
+  workers.forEach((w, i) => {
+    const baseY = G.ROWS_TOP + i * rowH + rowH / 2 + ns * 0.34;
+    if (w.trade) fitCen(w.trade, (G.L + G.TRADE_R) / 2, baseY, Math.max(4, ns - 0.5), G.TRADE_R - G.L - 2);
+    fit(w.name, G.TRADE_R + 3, baseY, ns, G.NAME_R - G.TRADE_R - 5);
+    areas.forEach((area, a) => {
+      const cell = day.hours?.[w.id]?.[area.id];
+      if (!cell) return;
+      COLS.forEach((col, c) => {
+        const v = cell[col];
+        if (v !== undefined && v !== null && v !== "" && Number(v) !== 0) cen(v, cellCX(a, c), baseY, ns);
+      });
+    });
+  });
+
+  // ---- Equipo por área ----
+  const eqTop = 367, eqMaxW = groupW - 5;
   areas.forEach((area, a) => {
     const list = day.tools?.[area.id] || [];
     if (!list.length) return;
-    let gap = C.EQUIP_ROW.height;
-    if (list.length > C.EQUIP_ROW.count) gap = Math.min(gap, (EQ_BOTTOM - EQ_TOP) / (list.length - 1));
-    const size = gap < 7.5 ? Math.max(5, gap - 0.8) : 6.5;
-    list.forEach((item, j) => {
-      fitLeft(`${item.qty}x ${item.tool}`, C.equipTextLeft(a), EQ_TOP + j * gap, size, C.EQUIP_MAX_WIDTH);
-    });
+    let gap = 10;
+    const avail = G.BOT - eqTop;
+    if (list.length * gap > avail) gap = avail / list.length;
+    const size = gap < 8 ? Math.max(5, gap - 1) : 6.5;
+    list.forEach((it, j) => fit(`${it.qty}x ${it.tool}`, gLeft(a) + 3, eqTop + j * gap, size, eqMaxW));
   });
 
   const bytes = await pdf.save();
-  const blob = new Blob([bytes], { type: "application/pdf" });
-  return { bytes, blob };
+  return { bytes, blob: new Blob([bytes], { type: "application/pdf" }) };
 }
 
 function formatDate(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
-  return `${m}/${d}/${y.slice(2)}`; // MM/DD/AA (USA, año 2 dígitos)
+  return `${m}/${d}/${y.slice(2)}`;
 }
 
 export function fileName(project, day, shift) {
