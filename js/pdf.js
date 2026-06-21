@@ -14,10 +14,10 @@ async function templateBytes() {
 
 const TD = (y) => C.PAGE.h - y;
 
-// Geometría de la tabla
+// Geometría de la tabla (aprovecha más alto de la hoja para renglones más altos)
 const G = {
   L: 1.4, TRADE_R: 29, NAME_R: 148.2, AREA_R: 789.8,
-  AN_TOP: 81.5, COL_TOP: 106.6, ROWS_TOP: 117.8, ROWS_BOT: 348.6, EQ_TOP: 359.6, BOT: 440
+  AN_TOP: 81.5, COL_TOP: 106.6, ROWS_TOP: 117.8, ROWS_BOT: 452, EQ_TOP: 463, BOT: 556, FOOTER_Y: 578
 };
 
 export async function fillWO({ project, day, shift }) {
@@ -40,9 +40,7 @@ export async function fillWO({ project, day, shift }) {
   text(shift === "night" ? "Nights" : "Days", C.HEADER.shift.x, C.HEADER.shift.y, 9);
   if (project.location) text(project.location, C.HEADER.location.x, C.HEADER.location.y, 9);
   text(formatDate(day.date), C.HEADER.date.x, C.HEADER.date.y, 9);
-  if (project.approvedBy) text(project.approvedBy, C.HEADER.approved.x, C.HEADER.approved.y, 9);
   const supervisor = (shift === "night" ? project.supervisorNight : project.supervisorDay) || project.supervisor;
-  if (supervisor) text(supervisor, C.HEADER.supervisor.x, C.HEADER.supervisor.y, 9);
   const weekday = EN_DAYS[new Date(day.date + "T00:00:00").getDay()] || "";
   fitCen(weekday, 727, 36, 11, 120, fontB);
 
@@ -55,8 +53,8 @@ export async function fillWO({ project, day, shift }) {
     return { bytes, blob: new Blob([bytes], { type: "application/pdf" }) };
   }
 
-  // Tapa la tabla impresa (área de columnas + filas + equipo)
-  page.drawRectangle({ x: 1.0, y: TD(G.BOT + 1), width: 790, height: (G.BOT + 1) - (G.AN_TOP - 1), color: white });
+  // Tapa la tabla impresa y el pie impreso (los redibujamos más abajo)
+  page.drawRectangle({ x: 1.0, y: TD(G.FOOTER_Y + 8), width: 790, height: (G.FOOTER_Y + 8) - (G.AN_TOP - 1), color: white });
 
   const groupW = (G.AREA_R - G.NAME_R) / N;
   const subW = groupW / 4;
@@ -94,11 +92,11 @@ export async function fillWO({ project, day, shift }) {
   areas.forEach((area, a) => {
     fitCen(area.name, gLeft(a) + groupW / 2, 98, 11, groupW - 8, fontB);
     COLS.forEach((c, ci) => cen(c, cellCX(a, ci), 114.5, 7, fontB));
-    cen("Equipment", gLeft(a) + groupW / 2, 356, 8, font);
+    cen("Equipment", gLeft(a) + groupW / 2, G.ROWS_BOT + 8, 8, font);
   });
 
   // ---- Trabajadores + horas ----
-  const ns = Math.max(4.5, Math.min(8, rowH - 2));
+  const ns = Math.max(5.5, Math.min(9, rowH - 3));
   workers.forEach((w, i) => {
     const baseY = G.ROWS_TOP + i * rowH + rowH / 2 + ns * 0.34;
     if (w.trade) fitCen(w.trade, (G.L + G.TRADE_R) / 2, baseY, Math.max(4, ns - 0.5), G.TRADE_R - G.L - 2);
@@ -121,16 +119,24 @@ export async function fillWO({ project, day, shift }) {
   });
 
   // ---- Equipo por área ----
-  const eqTop = 367, eqMaxW = groupW - 5;
+  const eqTop = G.EQ_TOP + 8, eqMaxW = groupW - 5;
   areas.forEach((area, a) => {
     const list = day.tools?.[area.id] || [];
     if (!list.length) return;
-    let gap = 10;
+    let gap = 11;
     const avail = G.BOT - eqTop;
     if (list.length * gap > avail) gap = avail / list.length;
-    const size = gap < 8 ? Math.max(5, gap - 1) : 6.5;
+    const size = gap < 8 ? Math.max(5, gap - 1) : 7;
     list.forEach((it, j) => fit(`${it.qty}x ${it.tool}`, gLeft(a) + 3, eqTop + j * gap, size, eqMaxW));
   });
+
+  // ---- Pie: Approved By / Supervisor (redibujado abajo) ----
+  text("Approved By :", 3, G.FOOTER_Y, 9);
+  if (project.approvedBy) text(project.approvedBy, 75, G.FOOTER_Y, 9);
+  hline(72, 470, G.FOOTER_Y + 3, 0.8, black);
+  text("Supervisor :", 500, G.FOOTER_Y, 9);
+  if (supervisor) text(supervisor, 560, G.FOOTER_Y, 9);
+  hline(557, 785, G.FOOTER_Y + 3, 0.8, black);
 
   const bytes = await pdf.save();
   return { bytes, blob: new Blob([bytes], { type: "application/pdf" }) };
