@@ -380,6 +380,7 @@ function renderWorkers(body) {
 function workerColumn(shift) {
   const p = state.project;
   const list = p.workers[shift];
+  const draft = ensureDraft(p, shift); // mismo estado de ausentes que la captura y los PDFs
   const markEdited = () => { p.workersEdited = true; };
   const tradeField = (val) => ({
     name: "trade", label: t("trade") + " (" + t("optional") + ")", type: "select", value: val || "",
@@ -390,9 +391,16 @@ function workerColumn(shift) {
     el("span", { class: "count" }, list.length)
   );
   const items = list.length
-    ? list.map(w => el("div", { class: "worker-row" },
+    ? list.map(w => el("div", { class: "worker-row" + (draft.absent[w.id] ? " absent" : "") },
         el("div", { class: "av" }, initials(w.name)),
         el("div", { class: "info" }, el("b", {}, w.name), w.trade ? el("span", {}, w.trade) : null),
+        el("button", {
+          class: "wr-absent" + (draft.absent[w.id] ? " on" : ""), title: t("markAbsent"),
+          onclick: async () => {
+            if (draft.absent[w.id]) delete draft.absent[w.id]; else draft.absent[w.id] = true;
+            await persistNow(); render();
+          }
+        }, "🚫"),
         el("button", {
           class: "edit", title: t("edit"), onclick: () => {
             formModal(t("edit"), [

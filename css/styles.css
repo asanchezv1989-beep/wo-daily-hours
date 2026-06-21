@@ -140,6 +140,10 @@ body {
 .worker-row .info span { font-size: 12.5px; color: var(--muted); }
 .worker-row .del { color: var(--danger); background: transparent; border: 0; cursor: pointer; padding: 6px; border-radius: 8px; }
 .worker-row .del:hover { background: #fef2f2; }
+.worker-row .wr-absent { background: transparent; border: 0; cursor: pointer; padding: 4px 6px; border-radius: 8px; font-size: 14px; filter: grayscale(1); opacity: .5; }
+.worker-row .wr-absent.on, .worker-row .wr-absent:hover { filter: none; opacity: 1; }
+.worker-row.absent { background: rgba(239, 68, 68, .14); border-color: #f6c6c6; }
+.worker-row.absent .info b { text-decoration: line-through; color: #b91c1c; }
 .worker-row .edit { color: var(--muted); background: transparent; border: 0; cursor: pointer; padding: 6px; border-radius: 8px; }
 .worker-row .edit:hover { background: var(--bg2); color: var(--accent1); }
 .worker-row .edit svg, .worker-row .del svg { width: 17px; height: 17px; }
