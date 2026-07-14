@@ -1,12 +1,9 @@
 // Catálogo central (Google Sheets) — proyectos y trabajadores administrados por el admin.
 // La app lee este CSV en modo SOLO LECTURA; los supervisores solo capturan horas.
 
-// URL del catálogo. Prioridad:
-//  1) localStorage('wo_sheet_url')  2) Google Sheet publicada (SHEET_URL)  3) CSV incluido (fallback offline)
-// Cuando tengas el link CSV de tu Google Sheet, pégalo en SHEET_URL y se sincroniza solo para todos.
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSw_8ozEZjODHFKItP-GkxkYfInYqCYGPeg10AWArPH8500cmO4Gfx2M7uz5yAlIJl7R9ZsqGSSs5bC/pub?gid=0&single=true&output=csv";
-export const CATALOG_URL =
-  localStorage.getItem("wo_sheet_url") || SHEET_URL || "./assets/roster.csv";
+// URL del catálogo. La app lee la lista de proyectos/cuadrillas desde este CSV.
+// Se actualiza regenerando assets/roster.csv desde el Excel de ManPower y redesplegando.
+export const CATALOG_URL = "./assets/roster.csv";
 
 export const CATALOG_MODE = !!CATALOG_URL;
 
